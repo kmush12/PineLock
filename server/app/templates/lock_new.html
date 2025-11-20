@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+    <h1>Nowy lock node</h1>
+    <p>Wprowadź podstawowe informacje, aby dodać urządzenie.</p>
+    {% if error == "missing_fields" %}
+    <div class="alert alert-error">Wypełnij wszystkie wymagane pola.</div>
+    {% elif error == "duplicate" %}
+    <div class="alert alert-error">Lock o tym device_id już istnieje.</div>
+    {% endif %}
+    <form method="post" action="/ui/locks" class="form">
+        <label>
+            Device ID
+            <input type="text" name="device_id" required>
+        </label>
+        <label>
+            Nazwa
+            <input type="text" name="name" required>
+        </label>
+        <label>
+            Lokalizacja (opcjonalnie)
+            <input type="text" name="location">
+        </label>
+        <button type="submit" class="btn primary">Dodaj lock node</button>
+    </form>
+</section>
+{% endblock %}

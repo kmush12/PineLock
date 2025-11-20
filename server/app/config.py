@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     api_title: str = "PineLock Server"
     api_version: str = "1.0.0"
+    admin_username: str = "admin"
+    admin_password: str = "admin"
+    session_secret_key: str = "change-me"
     
     class Config:
         env_file = ".env"

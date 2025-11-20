@@ -1,6 +1,6 @@
 # PineLock - IoT Lock System
 
-Distributed access management for vacation cabins with one central server and smart door locks. PineLock issues time-bound, offline-capable access using PIN keypads and RFID cards.
+Distributed access management for vacation cabins with one central server and smart door locks. PineLock provides PIN-based access control and RFID-based key presence detection.
 
 ## System Architecture
 
@@ -16,23 +16,24 @@ Distributed access management for vacation cabins with one central server and sm
    - WiFi connectivity
    - MQTT client
    - PCF8574 I2C keypad interface
-   - RC522 RFID reader
+    - RC522 RFID reader for key presence detection
    - DS3231 RTC for offline time-based access
    - MOSFET-controlled 12V lock
-   - Offline PIN/RFID authentication
+    - PIN-based access control with RFID key presence detection
 
 ## Hardware Requirements
 
 ### Server
-- Raspberry Pi 3/4 or similar
-- Internet connectivity
-- SD card with Raspberry Pi OS
+- **Raspberry Pi 5** (recommended) or Raspberry Pi 4/3
+- Internet connectivity (Ethernet or WiFi)
+- MicroSD card (32GB+) with **Raspberry Pi OS (64-bit) Bookworm**
+- 5V USB-C power supply (5A for Pi 5)
 
 ### Lock Node
 - Seeed XIAO ESP32-C3 microcontroller
 - PCF8574 I2C I/O expander (for keypad)
 - 4x4 Matrix keypad
-- RC522 RFID reader module
+- RC522 RFID reader module for key presence detection
 - DS3231 RTC module
 - MOSFET module (for 12V lock control)
 - 12V electromagnetic lock
@@ -58,18 +59,22 @@ Distributed access management for vacation cabins with one central server and sm
 
 ### Server Setup
 
-1. **Install dependencies:**
-   ```bash
-   cd server
-   pip install -r requirements.txt
-   ```
+1. **Install Raspberry Pi OS Bookworm (64-bit)** on your Raspberry Pi 5 microSD card using Raspberry Pi Imager
 
-2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   nano .env
-   ```
+2. **Connect monitor** via microHDMI cable to HDMI0 port
+
+3. **Install dependencies:**
+    ```bash
+    cd server
+    pip install -r requirements.txt
+    ```
+
+4. **Configure environment:**
+    ```bash
+    cp .env.example .env
+    # Edit .env with your settings
+    nano .env
+    ```
 
 3. **Install MQTT Broker (Mosquitto):**
    ```bash
@@ -137,7 +142,7 @@ curl -X POST "http://localhost:8000/api/v1/access-codes" \
   }'
 ```
 
-### Add RFID Card
+### Register RFID Key
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/rfid-cards" \
@@ -166,14 +171,35 @@ curl -X POST "http://localhost:8000/api/v1/locks/1/command" \
 curl "http://localhost:8000/api/v1/locks/1/access-logs"
 ```
 
+### Check Key Status
+
+The lock status now includes `is_key_present` field indicating if a registered RFID key is detected in the lock box:
+
+```bash
+curl "http://localhost:8000/api/v1/locks/1"
+```
+
+Response includes:
+```json
+{
+  "id": 1,
+  "device_id": "lock_001",
+  "name": "Front Door",
+  "is_online": true,
+  "is_locked": false,
+  "is_key_present": true,
+  "last_seen": "2024-01-15T10:30:00Z"
+}
+```
+
 ## MQTT Topics
 
 The system uses the following MQTT topic structure:
 
 - `pinelock/{device_id}/command` - Server to device commands
 - `pinelock/{device_id}/sync` - Sync request from server
-- `pinelock/{device_id}/status` - Device status updates
-- `pinelock/{device_id}/access` - Access events from device
+- `pinelock/{device_id}/status` - Lock status + RFID key presence
+- `pinelock/{device_id}/access` - PIN access events (RFID no longer used for access)
 - `pinelock/{device_id}/heartbeat` - Device heartbeat
 
 ## Features
@@ -192,9 +218,9 @@ The system uses the following MQTT topic structure:
 - ✅ WiFi connectivity
 - ✅ MQTT communication
 - ✅ PIN keypad support (via PCF8574)
-- ✅ RFID card reading (RC522)
+- ✅ RFID key presence detection (RC522)
 - ✅ RTC for time-based access (DS3231)
-- ✅ Offline authentication
+- ✅ Offline PIN authentication
 - ✅ 12V lock control (MOSFET)
 - ✅ Automatic re-locking
 - ✅ Access event reporting
@@ -207,7 +233,7 @@ The system uses the following MQTT topic structure:
 4. **Enable MQTT authentication** with username/password
 5. **Use TLS** for MQTT in production
 6. **Configure firmware credentials** before deployment
-7. **Regularly update** access codes and RFID cards
+7. **Regularly update** access codes and registered RFID keys
 8. **Monitor access logs** for suspicious activity
 9. **Keep firmware updated** on all devices
 
@@ -240,10 +266,12 @@ LOG_LEVEL=DEBUG
 - Verify I2C connections (SDA, SCL)
 - Test with I2C scanner
 
-### RFID not reading cards
+### RFID not detecting keys
 - Check SPI connections
 - Verify RC522 is powered (3.3V)
+- Ensure RFID key is registered in server database
 - Test with example RFID sketch
+- Check serial output for "Valid key present" messages
 
 ### RTC time incorrect
 - Replace CR2032 battery in DS3231

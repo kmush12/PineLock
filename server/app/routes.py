@@ -20,7 +20,7 @@ router = APIRouter()
 # Lock Endpoints
 @router.get("/locks", response_model=List[LockResponse])
 async def list_locks(session: AsyncSession = Depends(get_session)):
-    """Get list of all locks."""
+    """Get list of all locks with their current status."""
     result = await session.execute(select(Lock))
     locks = result.scalars().all()
     return locks

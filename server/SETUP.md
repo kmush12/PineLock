@@ -2,9 +2,45 @@
 
 ## Prerequisites
 
-- Raspberry Pi (3 or 4 recommended) with Raspberry Pi OS
-- Python 3.8 or higher
-- Network connectivity
+- **Raspberry Pi 5** with **Raspberry Pi OS (64-bit) Bookworm** or later
+- **Python 3.9 or higher** (included with Raspberry Pi OS Bookworm)
+- **Network connectivity** (Ethernet or WiFi)
+- **MicroSD card** (32GB or larger recommended)
+- **Power supply** (5V USB-C, 5A recommended for Pi 5)
+
+## Operating System Installation
+
+### Raspberry Pi OS for Raspberry Pi 5
+
+1. **Download Raspberry Pi Imager** from [raspberrypi.com/software](https://www.raspberrypi.com/software/)
+
+2. **Choose OS**: Select `Raspberry Pi OS (64-bit)` → `Raspberry Pi OS (64-bit)`
+
+3. **Choose Storage**: Insert microSD card and select it
+
+4. **Configure OS** (optional but recommended):
+   - Set hostname: `pinelock-server`
+   - Enable SSH
+   - Set username and password
+   - Configure WiFi (if not using Ethernet)
+
+5. **Write to microSD card**
+
+6. **Insert microSD into Raspberry Pi 5** and power on
+
+### Monitor Connection (microHDMI)
+
+Raspberry Pi 5 has **2x microHDMI ports** for video output:
+
+- **HDMI0 (near USB ports)**: Primary display
+- **HDMI1 (near Ethernet)**: Secondary display
+
+**To connect a monitor:**
+1. Use a **microHDMI to HDMI cable** (or adapter)
+2. Connect to **HDMI0 port** (recommended)
+3. Monitor should automatically detect the signal
+
+**Note**: Raspberry Pi OS Bookworm includes proper microHDMI drivers for Pi 5.
 
 ## Installation Steps
 
@@ -15,13 +51,22 @@ sudo apt-get update
 sudo apt-get upgrade -y
 ```
 
-### 2. Install Python Dependencies
+### 2. Verify Python Installation
+
+Raspberry Pi OS Bookworm includes Python 3.11:
+
+```bash
+python3 --version  # Should show Python 3.11.x
+pip3 --version     # Should show pip for Python 3.11
+```
+
+### 3. Install Python Dependencies
 
 ```bash
 sudo apt-get install -y python3-pip python3-venv
 ```
 
-### 3. Create Virtual Environment
+### 4. Create Virtual Environment
 
 ```bash
 cd /home/pi/PineLock/server
@@ -29,13 +74,13 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 4. Install Python Packages
+### 5. Install Python Packages
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Install and Configure MQTT Broker
+### 6. Install and Configure MQTT Broker
 
 ```bash
 # Install Mosquitto
@@ -49,7 +94,7 @@ sudo systemctl start mosquitto
 sudo systemctl status mosquitto
 ```
 
-### 6. Configure MQTT Authentication (Optional but Recommended)
+### 7. Configure MQTT Authentication (Optional but Recommended)
 
 ```bash
 # Create password file
@@ -70,7 +115,7 @@ Restart Mosquitto:
 sudo systemctl restart mosquitto
 ```
 
-### 7. Configure Environment Variables
+### 8. Configure Environment Variables
 
 ```bash
 cp .env.example .env
@@ -83,13 +128,16 @@ MQTT_BROKER_HOST=localhost
 MQTT_BROKER_PORT=1883
 MQTT_USERNAME=pinelock
 MQTT_PASSWORD=your_mqtt_password
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=strong_password
+SESSION_SECRET_KEY=super_secret_key
 ```
 
-### 8. Initialize Database
+### 9. Initialize Database
 
 The database will be automatically created on first run.
 
-### 9. Run the Server
+### 10. Run the Server
 
 For development:
 ```bash
@@ -103,14 +151,14 @@ source venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### 10. Set Up as System Service (Production)
+### 11. Set Up as System Service (Production)
 
 Create service file:
 ```bash
 sudo nano /etc/systemd/system/pinelock.service
 ```
 
-Content:
+Content (adjust paths if using different username):
 ```ini
 [Unit]
 Description=PineLock Server
@@ -123,6 +171,7 @@ WorkingDirectory=/home/pi/PineLock/server
 Environment="PATH=/home/pi/PineLock/server/venv/bin"
 ExecStart=/home/pi/PineLock/server/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
@@ -144,6 +193,10 @@ sudo systemctl status pinelock
 curl http://localhost:8000/
 curl http://localhost:8000/health
 ```
+
+### Web UI
+
+Open `http://<adres_serwera>:8000/ui/login` w przeglądarce i zaloguj się danymi z `.env`.
 
 ### Check MQTT
 

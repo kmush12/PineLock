@@ -9,16 +9,17 @@ Base = declarative_base()
 class Lock(Base):
     """Lock device model."""
     __tablename__ = "locks"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     device_id = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     location = Column(String)
     is_online = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=True)
+    is_key_present = Column(Boolean, default=False)  # RFID key presence detection
     last_seen = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     access_codes = relationship("AccessCode", back_populates="lock", cascade="all, delete-orphan")
     rfid_cards = relationship("RFIDCard", back_populates="lock", cascade="all, delete-orphan")

@@ -4,21 +4,54 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
 env/
 ENV/
-*.egg-info/
-dist/
-build/
-*.egg
+.venv/
+.envrc/
+.direnv/
+
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.cache
+nosetests.xml
+*.cover
+.hypothesis/
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
 
 # Environment files
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # IDE
 .vscode/
@@ -26,18 +59,36 @@ build/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
 # PlatformIO
 .pio/
 .pioenvs/
 .piolibdeps/
+.piolib/
+.pioinit
 
 # Logs
 *.log
+logs/
+*.log.*
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+.AppleDouble
 
 # CodeQL temporary files
 _codeql_detected_source_root/
@@ -46,3 +97,25 @@ _codeql_detected_source_root/
 *.tmp
 *.bak
 *.cache
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+
+# Development tools
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+.black/
+.pre-commit-config.yaml.backup
+
+# Project specific
+server/locks.db
+server/locks.db-journal
+firmware/lock_node/.pio/
+firmware/lock_node/.pioenvs/
+firmware/lock_node/.piolibdeps/
+
+# Backup files
+*.orig
+*.rej

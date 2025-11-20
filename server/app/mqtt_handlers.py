@@ -22,10 +22,12 @@ async def handle_status_update(device_id: str, data: dict):
             
             if lock:
                 lock.is_locked = status.is_locked
+                if status.is_key_present is not None:
+                    lock.is_key_present = status.is_key_present
                 lock.is_online = True
                 lock.last_seen = datetime.utcnow()
                 await session.commit()
-                logger.info(f"Updated status for lock {device_id}: locked={status.is_locked}")
+                logger.info(f"Updated status for lock {device_id}: locked={status.is_locked}, key_present={status.is_key_present}")
             else:
                 logger.warning(f"Received status from unknown device: {device_id}")
     

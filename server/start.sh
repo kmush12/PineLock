@@ -25,10 +25,23 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
+# Resolve host/port from configuration
+API_HOST=$(python3 - <<'PY'
+from app.config import settings
+print(settings.api_host)
+PY
+)
+API_PORT=$(python3 - <<'PY'
+from app.config import settings
+print(settings.api_port)
+PY
+)
+
 # Start server
 echo "Starting PineLock Server..."
-echo "API will be available at http://0.0.0.0:8000"
-echo "API docs at http://0.0.0.0:8000/docs"
+echo "API: http://${API_HOST}:${API_PORT}"
+echo "Docs: http://${API_HOST}:${API_PORT}/docs"
+echo "UI: http://${API_HOST}:${API_PORT}/ui/login"
 echo ""
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host "${API_HOST}" --port "${API_PORT}" --reload

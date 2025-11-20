@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h1>{{ lock.name }}</h1>
+            <p>ID: {{ lock.device_id }} • Lokalizacja: {{ lock.location or "—" }}</p>
+        </div>
+        <a href="/ui/dashboard" class="btn">← Wróć</a>
+    </div>
+    <div class="details">
+        <div>
+            <span class="label">Status</span>
+            {% if lock.is_online %}
+            <span class="status online">Online</span>
+            {% else %}
+            <span class="status offline">Offline</span>
+            {% endif %}
+        </div>
+        <div>
+            <span class="label">Ostatnio widziany</span>
+            {% if lock.last_seen %}
+            {{ lock.last_seen.strftime("%Y-%m-%d %H:%M") }}
+            {% else %}
+            —
+            {% endif %}
+        </div>
+        <div>
+            <span class="label">Klucz</span>
+            {% if lock.is_key_present %}
+            <span class="status online">Jest</span>
+            {% else %}
+            <span class="status warning">Brak</span>
+            {% endif %}
+        </div>
+    </div>
+</section>
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h2>Kody PIN</h2>
+            <p>Dodaj nowy lub edytuj istniejący</p>
+        </div>
+    </div>
+    {% if message == "code_created" %}
+    <div class="alert alert-success">PIN został dodany</div>
+    {% elif message == "code_updated" %}
+    <div class="alert alert-success">PIN został zaktualizowany</div>
+    {% endif %}
+    {% if error == "invalid_pin" %}
+    <div class="alert alert-error">PIN powinien zawierać 4-10 cyfr</div>
+    {% endif %}
+    <div class="split">
+        <form method="post" action="/ui/locks/{{ lock.id }}/access-codes" class="form">
+            <h3>Nowy PIN</h3>
+            <label>
+                PIN
+                <input type="text" name="code" minlength="4" maxlength="10" pattern="\\d+" required>
+            </label>
+            <label>
+                Nazwa (opcjonalnie)
+                <input type="text" name="name">
+            </label>
+            <button type="submit" class="btn primary">Dodaj PIN</button>
+        </form>
+        <div class="table-wrapper">
+            {% if codes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Nazwa</th>
+                        <th>Aktywny</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for code in codes %}
+                    <tr>
+                        <td>{{ code.code }}</td>
+                        <td>{{ code.name or "—" }}</td>
+                        <td>
+                            {% if code.is_active %}
+                            <span class="status online">Tak</span>
+                            {% else %}
+                            <span class="status warning">Nie</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="/ui/access-codes/{{ code.id }}/update" class="inline-form">
+                                <label>
+                                    PIN
+                                    <input type="text" name="code" value="{{ code.code }}" minlength="4" maxlength="10" pattern="\\d+" required>
+                                </label>
+                                <label>
+                                    Nazwa
+                                    <input type="text" name="name" value="{{ code.name or '' }}">
+                                </label>
+                                <label>
+                                    Status
+                                    <select name="is_active">
+                                        <option value="true" {% if code.is_active %}selected{% endif %}>Aktywny</option>
+                                        <option value="false" {% if not code.is_active %}selected{% endif %}>Zablokowany</option>
+                                    </select>
+                                </label>
+                                <button type="submit" class="btn small">Zapisz</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Brak kodów dla tego węzła.</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

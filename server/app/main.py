@@ -1,12 +1,16 @@
+from pathlib import Path
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db
-from app.routes import router
+from app.routes import router as api_router
 from app.mqtt_client import mqtt_client
 from app.mqtt_handlers import setup_mqtt_handlers
+from app.ui_routes import router as ui_router
 
 # Configure logging
 logging.basicConfig(
@@ -49,8 +53,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key)
+static_dir = Path(__file__).resolve().parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Include routes
-app.include_router(router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(ui_router)
 
 
 @app.get("/")

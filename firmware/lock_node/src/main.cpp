@@ -47,6 +47,7 @@ void reconnectMQTT();
 void sendHeartbeat();
 void sendAccessEvent(const char* accessType, const char* method, bool success);
 void sendStatusUpdate();
+void sendKeyStatusUpdate(bool keyPresent, String cardUID);
 void handleKeypad();
 void handleRFID();
 void controlLock(bool lock);
@@ -81,7 +82,7 @@ void loop() {
     // Handle keypad input
     handleKeypad();
     
-    // Handle RFID
+    // Handle RFID key presence detection
     handleRFID();
     
     // Send periodic heartbeat
@@ -284,17 +285,40 @@ void sendStatusUpdate() {
     if (!mqttClient.connected()) {
         return;
     }
-    
+
     String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/status";
     StaticJsonDocument<128> doc;
     doc["is_locked"] = isLocked;
+    doc["is_key_present"] = false; // Will be updated by RFID detection
     doc["timestamp"] = rtc.now().unixtime();
-    
+
     char buffer[128];
     serializeJson(doc, buffer);
-    
+
     mqttClient.publish(topic.c_str(), buffer);
     Serial.println("Status update sent");
+}
+
+void sendKeyStatusUpdate(bool keyPresent, String cardUID) {
+    if (!mqttClient.connected()) {
+        return;
+    }
+
+    String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/status";
+    StaticJsonDocument<256> doc;
+    doc["is_locked"] = isLocked;
+    doc["is_key_present"] = keyPresent;
+    if (keyPresent && cardUID.length() > 0) {
+        doc["key_uid"] = cardUID;
+    }
+    doc["timestamp"] = rtc.now().unixtime();
+
+    char buffer[256];
+    serializeJson(doc, buffer);
+
+    mqttClient.publish(topic.c_str(), buffer);
+    Serial.print("Key status update sent: ");
+    Serial.println(keyPresent ? "present" : "absent");
 }
 
 void handleKeypad() {
@@ -358,35 +382,45 @@ void processPINEntry(char key) {
 }
 
 void handleRFID() {
-    // Check if a new card is present
-    if (!rfid.PICC_IsNewCardPresent()) {
+    static bool lastKeyPresent = false;
+    static unsigned long lastRFIDCheck = 0;
+
+    // Check RFID presence every 500ms to avoid spam
+    if (millis() - lastRFIDCheck < 500) {
         return;
     }
-    
-    // Read card serial
-    if (!rfid.PICC_ReadCardSerial()) {
-        return;
+    lastRFIDCheck = millis();
+
+    // Check if a card is present
+    bool keyPresent = rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial();
+
+    // Only report changes in key presence
+    if (keyPresent != lastKeyPresent) {
+        lastKeyPresent = keyPresent;
+
+        if (keyPresent) {
+            String cardUID = getCardUID(&rfid.uid);
+            Serial.print("RFID key detected in box: ");
+            Serial.println(cardUID);
+
+            // Check if this is a registered key
+            bool valid = accessControl->validateRFID(cardUID.c_str());
+            if (valid) {
+                Serial.println("Valid key present in box");
+                sendKeyStatusUpdate(true, cardUID.c_str());
+            } else {
+                Serial.println("Unknown key detected in box");
+                sendKeyStatusUpdate(true, cardUID.c_str());
+            }
+
+            // Halt PICC
+            rfid.PICC_HaltA();
+            rfid.PCD_StopCrypto1();
+        } else {
+            Serial.println("RFID key removed from box");
+            sendKeyStatusUpdate(false, "");
+        }
     }
-    
-    String cardUID = getCardUID(&rfid.uid);
-    Serial.print("RFID card detected: ");
-    Serial.println(cardUID);
-    
-    bool valid = accessControl->validateRFID(cardUID.c_str());
-    
-    if (valid) {
-        Serial.println("RFID valid! Unlocking...");
-        controlLock(false);
-        sendAccessEvent("rfid", cardUID.c_str(), true);
-    } else {
-        Serial.println("RFID invalid!");
-        sendAccessEvent("rfid", cardUID.c_str(), false);
-    }
-    
-    // Halt PICC
-    rfid.PICC_HaltA();
-    // Stop encryption on PCD
-    rfid.PCD_StopCrypto1();
 }
 
 String getCardUID(MFRC522::Uid* uid) {

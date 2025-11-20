@@ -7,10 +7,11 @@ Firmware for ESP32-C3 based lock nodes with offline authentication capability.
 - **WiFi Connectivity**: Connects to local WiFi network
 - **MQTT Communication**: Two-way communication with central server
 - **PIN Keypad**: 4x4 matrix keypad via PCF8574 I2C expander
-- **RFID Reader**: RC522 RFID reader for card-based access
+- **RFID Reader**: RC522 RFID reader for key presence detection
 - **Real-Time Clock**: DS3231 RTC for time-based access control
 - **Lock Control**: MOSFET-controlled 12V electromagnetic lock
-- **Offline Authentication**: Stores access codes and RFID cards locally
+- **PIN Authentication**: Local PIN-based access control
+- **RFID Key Detection**: Detects presence of registered keys in the lock box
 - **Auto-locking**: Automatically locks after configurable duration
 - **Event Reporting**: Reports all access attempts to server
 

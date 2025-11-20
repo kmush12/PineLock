@@ -25,7 +25,7 @@ Connect 4x4 matrix keypad to PCF8574:
 
 PCF8574 I2C address: 0x20 (default)
 
-### 3. RC522 RFID Reader
+### 3. RC522 RFID Reader (Key Presence Detection)
 
 Connect to ESP32-C3 SPI:
 - SDA/SS → GPIO 3
@@ -136,12 +136,13 @@ The firmware includes a default PIN code `1234` for testing:
 3. Check serial monitor for confirmation
 4. Lock should auto-lock after 5 seconds
 
-### 2. Test RFID
+### 2. Test RFID Key Detection
 
-1. Present an RFID card to the reader
-2. Card UID will be displayed on serial monitor
-3. Add the UID to the server database
-4. Present card again - lock should unlock
+1. Register an RFID key in the server database first
+2. Place the registered key near the RFID reader
+3. Serial monitor should show "Valid key present in box"
+4. Server should receive MQTT message with key presence status
+5. Remove the key - should show "RFID key removed from box"
 
 ### 3. Test MQTT Commands
 
@@ -232,7 +233,7 @@ GPIO 10 → MOSFET Gate (Lock Control)
 - Check I2C address with scanner
 - Try different I2C address (0x20-0x27)
 
-### RC522 Not Reading
+### RC522 Not Detecting Keys
 - Check SPI connections
 - Verify 3.3V power (not 5V!)
 - Try different RFID cards

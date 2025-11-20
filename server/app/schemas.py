@@ -23,9 +23,10 @@ class LockResponse(LockBase):
     id: int
     is_online: bool
     is_locked: bool
+    is_key_present: bool
     last_seen: datetime
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -44,6 +45,7 @@ class AccessCodeCreate(AccessCodeBase):
 
 
 class AccessCodeUpdate(BaseModel):
+    code: Optional[str] = Field(None, min_length=4, max_length=10)
     name: Optional[str] = None
     is_active: Optional[bool] = None
     valid_from: Optional[datetime] = None
@@ -118,4 +120,5 @@ class MQTTAccessEvent(BaseModel):
 class MQTTStatusUpdate(BaseModel):
     device_id: str
     is_locked: bool
+    is_key_present: Optional[bool] = None  # RFID key presence status
     timestamp: Optional[datetime] = None

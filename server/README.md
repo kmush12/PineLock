@@ -11,6 +11,7 @@ Central management server for PineLock IoT lock system built with FastAPI, MQTT,
 - **Remote Control**: Lock/unlock devices remotely via API
 - **Device Monitoring**: Track online status and last seen time
 - **Time-based Access**: Support for time-limited access codes and cards
+- **Web Dashboard**: Lightweight UI for monitoring nodes and managing PIN codes
 
 ## Quick Start
 
@@ -28,6 +29,13 @@ pip install -r requirements.txt
 # Or manually
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+## Web UI
+
+- Panel logowania: http://localhost:8000/ui/login
+- Domyślne dane logowania: `admin` / `admin`
+- Dashboard pokazuje status lock nodes, ostatni kontakt oraz informację o kluczu
+- Szczegóły węzła umożliwiają dodawanie i edycję kodów PIN
 
 ## API Documentation
 
@@ -73,7 +81,10 @@ server/
 │   ├── schemas.py            # Pydantic schemas
 │   ├── routes.py             # API routes
 │   ├── mqtt_client.py        # MQTT client
-│   └── mqtt_handlers.py      # MQTT message handlers
+│   ├── mqtt_handlers.py      # MQTT message handlers
+│   ├── ui_routes.py          # Dashboard routes
+│   ├── templates/            # Jinja2 templates
+│   └── static/               # CSS assets
 ├── tests/                    # Test files
 ├── .env.example              # Example environment config
 ├── requirements.txt          # Python dependencies
@@ -92,6 +103,9 @@ MQTT_BROKER_PORT=1883
 DATABASE_URL=sqlite+aiosqlite:///./locks.db
 API_HOST=0.0.0.0
 API_PORT=8000
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+SESSION_SECRET_KEY=change-me
 ```
 
 ## MQTT Topics

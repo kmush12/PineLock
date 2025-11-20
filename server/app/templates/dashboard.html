@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h1>Lock nodes</h1>
+            <p>Podgląd stanu połączeń i klucza</p>
+        </div>
+        <div class="actions">
+            <form method="get" action="/ui/dashboard">
+                <button type="submit" class="btn">Odśwież</button>
+            </form>
+            <a href="/ui/locks/new" class="btn primary">+ Dodaj lock</a>
+        </div>
+    </div>
+    {% if message == "code_created" %}
+    <div class="alert alert-success">PIN został dodany</div>
+    {% elif message == "lock_created" %}
+    <div class="alert alert-success">Nowy lock node został dodany</div>
+    {% endif %}
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    {% if locks %}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Device ID</th>
+                    <th>Lokalizacja</th>
+                    <th>Status</th>
+                    <th>Ostatnio widziany</th>
+                    <th>Klucz w pudełku</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lock in locks %}
+                <tr>
+                    <td>{{ lock.name }}</td>
+                    <td>{{ lock.device_id }}</td>
+                    <td>{{ lock.location or "—" }}</td>
+                    <td>
+                        {% if lock.is_online %}
+                        <span class="status online">Online</span>
+                        {% else %}
+                        <span class="status offline">Offline</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lock.last_seen %}
+                        {{ lock.last_seen.strftime("%Y-%m-%d %H:%M") }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lock.is_key_present %}
+                        <span class="status online">Jest</span>
+                        {% else %}
+                        <span class="status warning">Brak</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/ui/locks/{{ lock.id }}" class="btn small">Szczegóły</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Brak zarejestrowanych lock nodes.</p>
+    {% endif %}
+</section>
+{% endblock %}

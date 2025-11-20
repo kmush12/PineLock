@@ -14,7 +14,7 @@ struct PINCode {
     bool hasTimeLimit;
 };
 
-// Structure for RFID cards
+// Structure for RFID cards (used for key presence detection)
 struct RFIDCard {
     char uid[20];
     bool isActive;
@@ -42,11 +42,11 @@ public:
     void clearPINCodes();
     int getPINCodeCount();
     
-    // RFID card management
+    // RFID card management (for key presence detection)
     bool addRFIDCard(const char* uid, bool isActive = true, bool hasTimeLimit = false,
-                     DateTime validFrom = DateTime(), DateTime validUntil = DateTime());
+                      DateTime validFrom = DateTime(), DateTime validUntil = DateTime());
     bool removeRFIDCard(const char* uid);
-    bool validateRFID(const char* uid);
+    bool validateRFID(const char* uid);  // Validates if card is registered for this lock
     void clearRFIDCards();
     int getRFIDCardCount();
     
