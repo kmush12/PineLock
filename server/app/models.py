@@ -73,3 +73,13 @@ class AccessLog(Base):
     
     # Relationships
     lock = relationship("Lock", back_populates="access_logs")
+
+
+class PendingDevice(Base):
+    """Incoming domek waiting for configuration."""
+    __tablename__ = "pending_devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String, unique=True, nullable=False, index=True)
+    first_seen = Column(DateTime, default=datetime.utcnow)
+    last_seen = Column(DateTime, default=datetime.utcnow)

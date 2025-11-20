@@ -30,11 +30,43 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
+## Local Development Runbook
+
+These steps reproduce the local setup we just performed on this laptop (Ubuntu-like shell assumed):
+
+1. **Create a dedicated virtual environment**
+   ```bash
+   cd server
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+2. **Install Python dependencies** (uses `requirements.txt`)
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   nano .env  # set MQTT host/port/credentials, admin login, etc.
+   ```
+4. **Run the API locally**
+   ```bash
+   source .venv/bin/activate
+   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+   - Logs are written to the console; redirect to `uvicorn.log` if you prefer detached execution (`... > uvicorn.log 2>&1 &`).
+   - Stop the server with `Ctrl+C` (foreground) or `pkill -f uvicorn`/`kill <PID>` (background).
+5. **Verify**
+   - Open `http://localhost:8000/health` for a JSON health check.
+   - UI login: `http://localhost:8000/ui/login` with credentials from `.env`.
+
+`start.sh` wraps the same workflow (creating `venv`, ensuring `.env`, launching uvicorn with `--reload`) if you prefer a single command.
+
 ## Web UI
 
 - Panel logowania: http://localhost:8000/ui/login
 - Domyślne dane logowania: `admin` / `admin`
-- Dashboard pokazuje status lock nodes, ostatni kontakt oraz informację o kluczu
+- Dashboard pokazuje status domków, ostatni kontakt oraz informację o kluczu
 - Szczegóły węzła umożliwiają dodawanie i edycję kodów PIN
 
 ## API Documentation

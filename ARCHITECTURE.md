@@ -24,7 +24,7 @@
         │                        │                │
         ▼                        ▼                ▼
 ┌───────────────┐        ┌───────────────┐  ┌───────────────┐
-│  Lock Node 1  │        │  Lock Node 2  │  │  Lock Node N  │
+│   Domek 1     │        │   Domek 2     │  │   Domek N     │
 │   (ESP32-C3)  │        │   (ESP32-C3)  │  │   (ESP32-C3)  │
 ├───────────────┤        ├───────────────┤  ├───────────────┤
 │ • WiFi        │        │ • WiFi        │  │ • WiFi        │
@@ -93,7 +93,7 @@ User → API → MQTT Publish → Device
                                       Update Database
 ```
 
-## Hardware Architecture (Lock Node)
+## Hardware Architecture (Domek)
 
 ```
 ┌─────────────────────────────────────────────────────┐

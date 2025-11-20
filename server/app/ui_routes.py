@@ -2,12 +2,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta
 
 from app.config import settings
 from app.database import get_session
-from app.models import AccessCode, Lock
+from app.models import AccessCode, Lock, PendingDevice
 from app.mqtt_client import mqtt_client
 
 
@@ -63,11 +64,23 @@ async def dashboard(
         return _login_redirect()
     result = await session.execute(select(Lock))
     locks = result.scalars().all()
+    cutoff = datetime.utcnow() - timedelta(days=1)
+    await session.execute(
+        delete(PendingDevice).where(PendingDevice.last_seen < cutoff)
+    )
+    await session.commit()
+    pending_result = await session.execute(
+        select(PendingDevice)
+        .where(PendingDevice.last_seen >= cutoff)
+        .order_by(PendingDevice.last_seen.desc())
+    )
+    pending_devices = pending_result.scalars().all()
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "locks": locks,
+            "pending_devices": pending_devices,
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")
         }
@@ -78,11 +91,13 @@ async def dashboard(
 async def new_lock(request: Request):
     if not _is_authenticated(request):
         return _login_redirect()
+    device_prefill = request.query_params.get("device_id", "")
     return templates.TemplateResponse(
         "lock_new.html",
         {
             "request": request,
-            "error": request.query_params.get("error")
+            "error": request.query_params.get("error"),
+            "device_prefill": device_prefill
         }
     )
 
@@ -119,6 +134,10 @@ async def create_lock_ui(
     session.add(lock)
     await session.commit()
     await session.refresh(lock)
+    await session.execute(
+        delete(PendingDevice).where(PendingDevice.device_id == device_id)
+    )
+    await session.commit()
     return RedirectResponse(
         url=f"/ui/dashboard?message=lock_created",
         status_code=status.HTTP_303_SEE_OTHER
@@ -181,6 +200,52 @@ async def create_access_code_ui(
     mqtt_client.request_sync(lock.device_id)
     return RedirectResponse(
         url=f"/ui/locks/{lock_id}?message=code_created",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+@router.post("/locks/{lock_id}/quick-pin")
+async def quick_pin_update_ui(
+    lock_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    code: str = Form(...),
+    name: str = Form(None)
+):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    code = code.strip()
+    clean_name = name.strip() if name else None
+    if not _is_valid_pin(code):
+        return RedirectResponse(
+            url="/ui/dashboard?error=invalid_pin",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+    lock_result = await session.execute(select(Lock).where(Lock.id == lock_id))
+    lock = lock_result.scalar_one_or_none()
+    if not lock:
+        return RedirectResponse(url="/ui/dashboard?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+    label = clean_name or "PIN główny"
+    existing_result = await session.execute(
+        select(AccessCode).where(
+            AccessCode.lock_id == lock_id,
+            AccessCode.name == label
+        ).limit(1)
+    )
+    access_code = existing_result.scalar_one_or_none()
+    if access_code:
+        access_code.code = code
+        access_code.name = label
+        access_code.is_active = True
+        message = "pin_updated"
+    else:
+        access_code = AccessCode(lock_id=lock_id, code=code, name=label)
+        session.add(access_code)
+        message = "pin_created"
+    await session.commit()
+    mqtt_client.request_sync(lock.device_id)
+    return RedirectResponse(
+        url=f"/ui/dashboard?message={message}",
         status_code=status.HTTP_303_SEE_OTHER
     )
 

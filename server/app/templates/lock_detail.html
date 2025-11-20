@@ -6,7 +6,7 @@
             <h1>{{ lock.name }}</h1>
             <p>ID: {{ lock.device_id }} • Lokalizacja: {{ lock.location or "—" }}</p>
         </div>
-        <a href="/ui/dashboard" class="btn">← Wróć</a>
+        <a href="/ui/dashboard" class="btn">← Wróć do listy domków</a>
     </div>
     <div class="details">
         <div>
@@ -39,7 +39,7 @@
     <div class="card-header">
         <div>
             <h2>Kody PIN</h2>
-            <p>Dodaj nowy lub edytuj istniejący</p>
+            <p>Dodaj nowy lub edytuj istniejący PIN tego domku</p>
         </div>
     </div>
     {% if message == "code_created" %}
@@ -111,7 +111,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p>Brak kodów dla tego węzła.</p>
+            <p>Brak kodów dla tego domku.</p>
             {% endif %}
         </div>
     </div>

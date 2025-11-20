@@ -1,17 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card narrow">
-    <h1>Nowy lock node</h1>
+    <h1>Nowy domek</h1>
     <p>Wprowadź podstawowe informacje, aby dodać urządzenie.</p>
+    {% if device_prefill %}
+    <div class="alert alert-success">
+        Zgłoszono nowy domek z device_id <strong>{{ device_prefill }}</strong>. Uzupełnij dane, aby go aktywować.
+    </div>
+    {% endif %}
     {% if error == "missing_fields" %}
     <div class="alert alert-error">Wypełnij wszystkie wymagane pola.</div>
     {% elif error == "duplicate" %}
-    <div class="alert alert-error">Lock o tym device_id już istnieje.</div>
+    <div class="alert alert-error">Domek o tym device_id już istnieje.</div>
     {% endif %}
     <form method="post" action="/ui/locks" class="form">
         <label>
             Device ID
-            <input type="text" name="device_id" required>
+            <input type="text" name="device_id" value="{{ device_prefill }}" required>
         </label>
         <label>
             Nazwa
@@ -21,7 +26,7 @@
             Lokalizacja (opcjonalnie)
             <input type="text" name="location">
         </label>
-        <button type="submit" class="btn primary">Dodaj lock node</button>
+        <button type="submit" class="btn primary">Dodaj domek</button>
     </form>
 </section>
 {% endblock %}

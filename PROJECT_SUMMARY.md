@@ -4,7 +4,7 @@
 
 PineLock is a complete IoT lock system for vacation cabins featuring:
 - Central server on Raspberry Pi (Python FastAPI + MQTT + SQLite)
-- Lock nodes on Seeed XIAO ESP32-C3 (Arduino C++)
+- Domki built on Seeed XIAO ESP32-C3 (Arduino C++)
 - Offline-capable authentication with PIN codes and RFID cards
 - Time-based access control
 - Remote lock management

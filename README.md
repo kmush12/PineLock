@@ -12,7 +12,7 @@ Distributed access management for vacation cabins with one central server and sm
    - SQLite database for access management
    - Python-based
 
-2. **Lock Nodes** (Seeed XIAO ESP32-C3)
+2. **Domki** (Seeed XIAO ESP32-C3)
    - WiFi connectivity
    - MQTT client
    - PCF8574 I2C keypad interface
@@ -29,7 +29,7 @@ Distributed access management for vacation cabins with one central server and sm
 - MicroSD card (32GB+) with **Raspberry Pi OS (64-bit) Bookworm**
 - 5V USB-C power supply (5A for Pi 5)
 
-### Lock Node
+### Domek
 - Seeed XIAO ESP32-C3 microcontroller
 - PCF8574 I2C I/O expander (for keypad)
 - 4x4 Matrix keypad

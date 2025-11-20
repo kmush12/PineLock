@@ -10,9 +10,9 @@
     <header class="app-header">
         <div class="brand">PineLock</div>
         <nav class="nav-links">
-            <a href="/ui/dashboard">Panel</a>
+            <a href="/ui/dashboard">Domki</a>
             {% if request.session.get("user") %}
-            <a href="/ui/locks/new">Dodaj lock</a>
+            <a href="/ui/locks/new">Dodaj domek</a>
             <span class="user-label">{{ request.session.get("user") }}</span>
             <a href="/ui/logout">Wyloguj</a>
             {% endif %}

@@ -75,6 +75,7 @@ a {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .card-header .actions {
@@ -97,6 +98,23 @@ a {
     margin-bottom: 0.25rem;
 }
 
+.eyebrow {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+    margin: 0 0 0.2rem 0;
+}
+
+.muted {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.9rem;
+}
+
+.center {
+    text-align: center;
+}
+
 .btn {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 999px;
@@ -116,6 +134,11 @@ a {
 .btn.small {
     padding: 0.3rem 0.8rem;
     font-size: 0.8rem;
+}
+
+.btn.ghost {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .btn:hover {
@@ -166,6 +189,120 @@ th {
     overflow-x: auto;
 }
 
+.domki-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.pending-banner {
+    border: 1px solid rgba(96, 165, 250, 0.25);
+    background: rgba(20, 26, 46, 0.9);
+}
+
+.pending-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.pending-chip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.pending-chip strong {
+    font-size: 1rem;
+}
+
+.pending-chip span {
+    display: block;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.domek-card {
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    background: rgba(18, 21, 34, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 100%;
+}
+
+.domek-card.online {
+    box-shadow: 0 20px 40px rgba(76, 175, 80, 0.08);
+}
+
+.domek-card.offline {
+    box-shadow: 0 20px 40px rgba(229, 62, 62, 0.08);
+}
+
+.domek-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.domek-card-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.meta strong {
+    font-size: 1rem;
+}
+
+.pin-quick {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.pin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.pin-inputs {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.pin-inputs input {
+    flex: 1;
+    min-width: 140px;
+}
+
+.domek-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .status {
     padding: 0.15rem 0.8rem;
     border-radius: 999px;
@@ -188,6 +325,15 @@ th {
     color: #f6ad55;
 }
 
+.pill {
+    border-radius: 999px;
+}
+
+.mini {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.6rem;
+}
+
 .alert {
     padding: 0.8rem 1rem;
     border-radius: 0.8rem;
@@ -197,6 +343,23 @@ th {
 .alert-success {
     background: rgba(72, 187, 120, 0.15);
     color: #48bb78;
+}
+
+.actions.stacked {
+    flex-direction: column;
+}
+
+@media (max-width: 768px) {
+    .content {
+        padding: 1.25rem;
+    }
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .domek-actions {
+        justify-content: flex-start;
+    }
 }
 
 .alert-error {

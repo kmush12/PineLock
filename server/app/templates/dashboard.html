@@ -1,77 +1,119 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
+{% if pending_devices %}
+<section class="card pending-banner">
+    <div class="pending-header">
+        <div>
+            <p class="eyebrow">Nowe domki wykryte automatycznie</p>
+            <h2>{{ pending_devices|length }} do skonfigurowania</h2>
+            <p>Urządzenie zgłosiło się po raz pierwszy. Przypisz nazwę i lokalizację, aby w pełni je aktywować.</p>
+        </div>
+        <div class="pending-actions">
+            <a href="/ui/locks/new" class="btn ghost">Dodaj ręcznie</a>
+        </div>
+    </div>
+    <div class="pending-list">
+        {% for pending in pending_devices %}
+        <div class="pending-chip">
+            <div>
+                <strong>{{ pending.device_id }}</strong>
+                <span>Ostatni sygnał: {{ pending.last_seen.strftime("%Y-%m-%d %H:%M") }}</span>
+            </div>
+            <a href="/ui/locks/new?device_id={{ pending.device_id }}" class="btn primary small">Skonfiguruj</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+<section class="card domki-panel">
     <div class="card-header">
         <div>
-            <h1>Lock nodes</h1>
-            <p>Podgląd stanu połączeń i klucza</p>
+            <p class="eyebrow">Twoja flota</p>
+            <h1>Domki</h1>
+            <p>Zdalnie zarządzaj dostępem i szybko zmieniaj PIN-y mieszkańców.</p>
         </div>
-        <div class="actions">
+        <div class="actions stacked">
             <form method="get" action="/ui/dashboard">
                 <button type="submit" class="btn">Odśwież</button>
             </form>
-            <a href="/ui/locks/new" class="btn primary">+ Dodaj lock</a>
+            <a href="/ui/locks/new" class="btn primary">+ Dodaj domek</a>
         </div>
     </div>
-    {% if message == "code_created" %}
-    <div class="alert alert-success">PIN został dodany</div>
-    {% elif message == "lock_created" %}
-    <div class="alert alert-success">Nowy lock node został dodany</div>
+    {% if message %}
+        {% set success_map = {
+            "code_created": "PIN został dodany.",
+            "lock_created": "Domek został dodany.",
+            "pin_created": "Nowy PIN zapisany i wysłany do domku.",
+            "pin_updated": "PIN został zaktualizowany."
+        } %}
+        <div class="alert alert-success">{{ success_map.get(message, "Operacja wykonana pomyślnie.") }}</div>
     {% endif %}
     {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
+        {% set error_map = {
+            "invalid_pin": "PIN powinien zawierać 4-10 cyfr.",
+            "not_found": "Wybrany domek nie istnieje."
+        } %}
+        <div class="alert alert-error">{{ error_map.get(error, error) }}</div>
     {% endif %}
     {% if locks %}
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nazwa</th>
-                    <th>Device ID</th>
-                    <th>Lokalizacja</th>
-                    <th>Status</th>
-                    <th>Ostatnio widziany</th>
-                    <th>Klucz w pudełku</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lock in locks %}
-                <tr>
-                    <td>{{ lock.name }}</td>
-                    <td>{{ lock.device_id }}</td>
-                    <td>{{ lock.location or "—" }}</td>
-                    <td>
-                        {% if lock.is_online %}
-                        <span class="status online">Online</span>
-                        {% else %}
-                        <span class="status offline">Offline</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if lock.last_seen %}
-                        {{ lock.last_seen.strftime("%Y-%m-%d %H:%M") }}
-                        {% else %}
-                        —
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if lock.is_key_present %}
-                        <span class="status online">Jest</span>
-                        {% else %}
-                        <span class="status warning">Brak</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="/ui/locks/{{ lock.id }}" class="btn small">Szczegóły</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="domki-grid">
+        {% for lock in locks %}
+        <article class="domek-card {% if lock.is_online %}online{% else %}offline{% endif %}">
+            <div class="domek-card-header">
+                <div>
+                    <p class="eyebrow">Domek</p>
+                    <h2>{{ lock.name }}</h2>
+                    <p class="muted">{{ lock.location or "Brak lokalizacji" }}</p>
+                </div>
+                {% if lock.is_online %}
+                <span class="status online pill">Online</span>
+                {% else %}
+                <span class="status offline pill">Offline</span>
+                {% endif %}
+            </div>
+            <div class="domek-card-body">
+                <div class="meta">
+                    <span class="label">Device ID</span>
+                    <strong>{{ lock.device_id }}</strong>
+                </div>
+                <div class="meta">
+                    <span class="label">Ostatni kontakt</span>
+                    {% if lock.last_seen %}
+                    <strong>{{ lock.last_seen.strftime("%Y-%m-%d %H:%M") }}</strong>
+                    {% else %}
+                    <strong>Brak danych</strong>
+                    {% endif %}
+                </div>
+                <div class="meta">
+                    <span class="label">Klucz</span>
+                    {% if lock.is_key_present %}
+                    <span class="status online pill mini">Jest</span>
+                    {% else %}
+                    <span class="status warning pill mini">Brak</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="pin-quick">
+                <div>
+                    <h3>Szybka zmiana PIN-u</h3>
+                    <p>Akcja nadpisze lub utworzy PIN o wskazanej nazwie (domyślnie „PIN główny”).</p>
+                </div>
+                <form method="post" action="/ui/locks/{{ lock.id }}/quick-pin" class="pin-form">
+                    <div class="pin-inputs">
+                        <input type="text" name="code" placeholder="Nowy PIN" minlength="4" maxlength="10" pattern="\\d+" required>
+                        <input type="text" name="name" placeholder="Etykieta (opcjonalna)">
+                    </div>
+                    <button type="submit" class="btn primary">Zapisz PIN</button>
+                </form>
+            </div>
+            <div class="domek-actions">
+                <a href="/ui/locks/{{ lock.id }}" class="btn ghost">Szczegóły</a>
+            </div>
+        </article>
+        {% endfor %}
     </div>
     {% else %}
-    <p>Brak zarejestrowanych lock nodes.</p>
+    <p class="muted center">Brak zarejestrowanych domków.</p>
     {% endif %}
 </section>
 {% endblock %}

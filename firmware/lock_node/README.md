@@ -1,6 +1,6 @@
 # PineLock Firmware
 
-Firmware for ESP32-C3 based lock nodes with offline authentication capability.
+Firmware for ESP32-C3 based domki with offline authentication capability.
 
 ## Features
 
