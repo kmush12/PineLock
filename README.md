@@ -201,13 +201,15 @@ The system uses the following MQTT topic structure:
 
 ## Security Considerations
 
-1. **Change default credentials** in production
-2. **Use HTTPS** for API in production
-3. **Enable MQTT authentication** with username/password
-4. **Use TLS** for MQTT in production
-5. **Regularly update** access codes and RFID cards
-6. **Monitor access logs** for suspicious activity
-7. **Keep firmware updated** on all devices
+1. **Never commit secrets** - they're in .gitignore
+2. **Change default credentials** in production
+3. **Use HTTPS** for API in production
+4. **Enable MQTT authentication** with username/password
+5. **Use TLS** for MQTT in production
+6. **Configure firmware credentials** before deployment
+7. **Regularly update** access codes and RFID cards
+8. **Monitor access logs** for suspicious activity
+9. **Keep firmware updated** on all devices
 
 ## Development
 

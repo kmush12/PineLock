@@ -82,8 +82,7 @@ Update these values:
 MQTT_BROKER_HOST=localhost
 MQTT_BROKER_PORT=1883
 MQTT_USERNAME=pinelock
-MQTT_PASSWORD=your_password_here
-SECRET_KEY=generate_a_random_secret_key
+MQTT_PASSWORD=your_mqtt_password
 ```
 
 ### 8. Initialize Database

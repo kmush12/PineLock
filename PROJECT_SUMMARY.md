@@ -220,7 +220,6 @@ mosquitto_pub -h localhost \
 ### Before Deployment:
 
 1. **Security:**
-   - [ ] Change SECRET_KEY in .env
    - [ ] Enable MQTT authentication
    - [ ] Configure firewall rules
    - [ ] Set up HTTPS for API

@@ -1,19 +1,19 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_EXAMPLE_H
+#define CONFIG_EXAMPLE_H
 
 // WiFi Configuration - SET THESE BEFORE DEPLOYMENT!
-#define WIFI_SSID ""          // Your WiFi network name
-#define WIFI_PASSWORD ""      // Your WiFi password
+#define WIFI_SSID "YourWiFiNetwork"          // Your WiFi network name
+#define WIFI_PASSWORD "YourWiFiPassword"      // Your WiFi password
 
 // MQTT Configuration - SET THESE BEFORE DEPLOYMENT!
-#define MQTT_BROKER ""        // IP address of MQTT broker (e.g., "192.168.1.100")
+#define MQTT_BROKER "192.168.1.100"           // IP address of your MQTT broker
 #define MQTT_PORT 1883
-#define MQTT_USERNAME ""      // MQTT username (leave empty if no auth)
-#define MQTT_PASSWORD ""      // MQTT password (leave empty if no auth)
+#define MQTT_USERNAME ""                      // MQTT username (leave empty if no auth)
+#define MQTT_PASSWORD ""                      // MQTT password (leave empty if no auth)
 #define MQTT_TOPIC_PREFIX "pinelock"
 
 // Device Configuration - SET UNIQUE ID FOR EACH LOCK!
-#define DEVICE_ID "lock_001"  // Unique identifier for this lock device
+#define DEVICE_ID "lock_001"                  // Unique identifier for this lock device
 
 // Hardware Pin Configuration
 // I2C for PCF8574 (Keypad) and DS3231 (RTC)
@@ -42,4 +42,5 @@
 #define MAX_RFID_CARDS 50
 #define PIN_LENGTH 4
 
-#endif // CONFIG_H
+#endif // CONFIG_EXAMPLE_H</content>
+<parameter name="filePath">/home/kmush/IdeaProjects/PineLock/firmware/lock_node/include/config.h.example

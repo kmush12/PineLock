@@ -21,10 +21,6 @@ class Settings(BaseSettings):
     api_title: str = "PineLock Server"
     api_version: str = "1.0.0"
     
-    # Security
-    secret_key: str = "your-secret-key-here-change-in-production"
-    access_token_expire_minutes: int = 30
-    
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -92,7 +92,6 @@ MQTT_BROKER_PORT=1883
 DATABASE_URL=sqlite+aiosqlite:///./locks.db
 API_HOST=0.0.0.0
 API_PORT=8000
-SECRET_KEY=your-secret-key-here
 ```
 
 ## MQTT Topics
@@ -144,13 +143,12 @@ See [SETUP.md](SETUP.md) for:
 
 ⚠️ **Important for Production:**
 
-1. Change `SECRET_KEY` in `.env`
-2. Enable MQTT authentication
-3. Use HTTPS for API
-4. Configure firewall rules
-5. Regular database backups
-6. Monitor access logs
-7. Keep dependencies updated
+1. Enable MQTT authentication
+2. Use HTTPS for API
+3. Configure firewall rules
+4. Regular database backups
+5. Monitor access logs
+6. Keep dependencies updated
 
 ## Troubleshooting
 
