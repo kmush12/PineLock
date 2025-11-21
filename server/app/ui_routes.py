@@ -31,6 +31,12 @@ def _is_valid_pin(value: str) -> bool:
     return value.isdigit() and 4 <= len(value) <= 10
 
 
+def _get_user_context(request: Request) -> dict:
+    username = request.session.get("user", "Admin")
+    user_initial = username[0].upper() if username else "A"
+    return {"username": username, "user_initial": user_initial}
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if _is_authenticated(request):
@@ -114,6 +120,7 @@ async def new_lock(request: Request):
         "lock_new.html",
         {
             "request": request,
+            **_get_user_context(request),
             "error": request.query_params.get("error"),
             "device_prefill": device_prefill
         }
@@ -205,6 +212,7 @@ async def lock_detail(
         "lock_detail.html",
         {
             "request": request,
+            **_get_user_context(request),
             "lock": lock,
             "codes": codes,
             "access_methods": access_methods,
@@ -369,6 +377,7 @@ async def access_codes_list(request: Request, session: AsyncSession = Depends(ge
         "access_codes.html",
         {
             "request": request,
+            **_get_user_context(request),
             "codes": codes,
             "all_locks": all_locks,
             "total_codes": total_codes,
@@ -427,6 +436,7 @@ async def rfid_cards_list(request: Request, session: AsyncSession = Depends(get_
         "rfid_cards.html",
         {
             "request": request,
+            **_get_user_context(request),
             "active_page": "rfid-cards",
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")
@@ -482,6 +492,7 @@ async def access_logs_list(request: Request, session: AsyncSession = Depends(get
         "access_logs.html",
         {
             "request": request,
+            **_get_user_context(request),
             "logs": logs,
             "all_locks": all_locks,
             "total_logs": total_logs,
@@ -549,7 +560,7 @@ async def settings_page(request: Request, session: AsyncSession = Depends(get_se
         "settings.html",
         {
             "request": request,
-            "username": username,
+            **_get_user_context(request),
             "system_info": system_info,
             "mqtt_config": mqtt_config,
             "db_stats": db_stats,

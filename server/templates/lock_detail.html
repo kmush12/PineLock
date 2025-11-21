@@ -3,70 +3,190 @@
 {% block title %}{{ lock.name }} - PineLock{% endblock %}
 
 {% block content %}
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+
+<!-- Mobile Header -->
+<div class="mobile-header">
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <span>☰</span>
+        <span class="mobile-title">{{ lock.name }}</span>
+    </button>
+</div>
+
 <div class="dashboard-container">
-    <!-- Sidebar (same as dashboard) -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <svg class="sidebar-logo" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="100,30 60,90 75,90" fill="#3a8660"/>
-                <polygon points="100,30 140,90 125,90" fill="#4a9670"/>
-                <polygon points="100,70 50,140 70,140" fill="#3a8660"/>
-                <polygon points="100,70 150,140 130,140" fill="#4a9670"/>
-                <polygon points="100,110 40,190 65,190" fill="#3a8660"/>
-                <polygon points="100,110 160,190 135,190" fill="#4a9670"/>
-                <rect x="85" y="190" width="30" height="50" fill="#3a8660"/>
-                <rect x="100" y="190" width="15" height="50" fill="#4a9670"/>
-                <circle cx="100" cy="120" r="22" fill="#f5f5dc"/>
-                <path d="M 90,130 L 90,160 L 110,160 L 110,130 L 105,130 L 105,145 L 95,145 L 95,130 Z" fill="#f5f5dc"/>
-            </svg>
-            <h2 class="sidebar-title">PineLock</h2>
-            <p class="sidebar-subtitle">System zarządzania</p>
+    <!-- Desktop Top Navbar -->
+    <nav class="desktop-navbar">
+        <div class="desktop-navbar-brand">
+            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="desktop-navbar-logo">
+            <div>
+                <h1 class="desktop-navbar-title">PineLock</h1>
+            </div>
         </div>
-        
-        <nav class="sidebar-nav">
-            <a href="/dashboard" class="nav-item">
-                <span class="nav-icon">🏠</span>
-                Panel główny
-            </a>
-            <a href="/locks" class="nav-item active">
-                <span class="nav-icon">🔐</span>
+
+        <div class="desktop-navbar-nav">
+            <a href="/ui/locks" class="desktop-nav-item {% if active_page == 'domki' %}active{% endif %}">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </span>
                 Domki
             </a>
-            <a href="/access-codes" class="nav-item">
-                <span class="nav-icon">🔢</span>
+            <a href="/ui/access-codes" class="desktop-nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <path d="M6 12h.01M18 12h.01"></path>
+                    </svg>
+                </span>
                 Kody PIN
             </a>
-            <a href="/rfid-cards" class="nav-item">
-                <span class="nav-icon">📇</span>
+            <a href="/ui/rfid-cards" class="desktop-nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                </span>
                 Karty RFID
             </a>
-            <a href="/access-logs" class="nav-item">
-                <span class="nav-icon">📊</span>
-                Historia dostępu
+            <a href="/ui/access-logs" class="desktop-nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </span>
+                Historia
             </a>
-            <a href="/settings" class="nav-item">
-                <span class="nav-icon">⚙️</span>
+            <a href="/ui/settings" class="desktop-nav-item {% if active_page == 'settings' %}active{% endif %}">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </span>
                 Ustawienia
             </a>
-            <a href="/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <span class="nav-icon">🚪</span>
-                Wyloguj się
+        </div>
+
+        <div class="desktop-navbar-user">
+            <div class="user-avatar">{{ user_initial }}</div>
+            <span>{{ username }}</span>
+            <a href="/ui/logout" class="desktop-nav-item" style="margin-left: 10px;">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </span>
+                Wyloguj
             </a>
-        </nav>
-    </aside>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <div>
-                <a href="/locks" style="color: var(--pine-green); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 10px;">
-                    ← Powrót do listy
-                </a>
-                <h1 class="header-title">🔐 {{ lock.name }}</h1>
+        </div>
+    </nav>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Sidebar (same as dashboard) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+                <h2 class="sidebar-title">PineLock</h2>
+                <p class="sidebar-subtitle">System zarządzania</p>
             </div>
-            <div class="header-actions">
-                {% if lock.is_online %}
+
+            <nav class="sidebar-nav">
+                <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </span>
+                    Domki
+                </a>
+                <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <path d="M6 12h.01M18 12h.01"></path>
+                        </svg>
+                    </span>
+                    Kody PIN
+                </a>
+                <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </span>
+                    Karty RFID
+                </a>
+                <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </span>
+                    Historia
+                </a>
+                <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </span>
+                    Ustawienia
+                </a>
+                <a href="/ui/logout" class="nav-item"
+                    style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </span>
+                    Wyloguj się
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <a href="/ui/locks"
+                        style="color: var(--pine-green); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 10px;">
+                        ← Powrót do listy
+                    </a>
+                    <h1 class="header-title">🔐 {{ lock.name }}</h1>
+                </div>
+                <div class="header-actions">
+                    {% if lock.is_online %}
                     {% if lock.is_locked %}
                     <button class="btn btn-success" onclick="toggleLock('unlock')">
                         🔓 Otwórz domek
@@ -76,236 +196,240 @@
                         🔒 Zamknij domek
                     </button>
                     {% endif %}
-                {% else %}
-                <button class="btn" style="background: #ccc; cursor: not-allowed;" disabled>
-                    ⚠️ Urządzenie offline
-                </button>
-                {% endif %}
+                    {% else %}
+                    <button class="btn" style="background: #ccc; cursor: not-allowed;" disabled>
+                        ⚠️ Urządzenie offline
+                    </button>
+                    {% endif %}
+                </div>
             </div>
-        </div>
-        
-        <!-- Lock Status Card -->
-        <div class="form-card">
-            <h2 class="form-title">Status urządzenia</h2>
-            
-            <div class="stats-grid" style="margin-bottom: 0;">
-                <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
-                    <div class="stat-icon {{ 'green' if lock.is_locked else 'yellow' }}">
-                        {{ '🔒' if lock.is_locked else '🔓' }}
+
+            <!-- Lock Status Card -->
+            <div class="form-card">
+                <h2 class="form-title">Status urządzenia</h2>
+
+                <div class="stats-grid" style="margin-bottom: 0;">
+                    <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
+                        <div class="stat-icon {{ 'green' if lock.is_locked else 'yellow' }}">
+                            {{ '🔒' if lock.is_locked else '🔓' }}
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Status zamka</div>
+                            <div class="stat-value" style="font-size: 24px;">
+                                {{ 'Zajęty' if lock.is_locked else 'Wolny' }}
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <div class="stat-label">Status zamka</div>
-                        <div class="stat-value" style="font-size: 24px;">
-                            {{ 'Zamknięty' if lock.is_locked else 'Otwarty' }}
+
+                    <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
+                        <div class="stat-icon {{ 'green' if lock.is_online else 'red' }}">
+                            {{ '📡' if lock.is_online else '⚠️' }}
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Połączenie</div>
+                            <div class="stat-value" style="font-size: 24px;">
+                                {{ 'Online' if lock.is_online else 'Offline' }}
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
-                    <div class="stat-icon {{ 'green' if lock.is_online else 'red' }}">
-                        {{ '📡' if lock.is_online else '⚠️' }}
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-label">Połączenie</div>
-                        <div class="stat-value" style="font-size: 24px;">
-                            {{ 'Online' if lock.is_online else 'Offline' }}
-                        </div>
-                    </div>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--light-gray);">
+                    <p><strong>📍 Lokalizacja:</strong> {{ lock.location }}</p>
+                    <p><strong>🆔 Device ID:</strong> <code>{{ lock.device_id }}</code></p>
+                    <p><strong>📝 Opis:</strong> {{ lock.description or 'Brak opisu' }}</p>
+                    {% if lock.last_seen %}
+                    <p><strong>⏰ Ostatnio widziany:</strong> {{ lock.last_seen }}</p>
+                    {% endif %}
                 </div>
             </div>
-            
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--light-gray);">
-                <p><strong>📍 Lokalizacja:</strong> {{ lock.location }}</p>
-                <p><strong>🆔 Device ID:</strong> <code>{{ lock.device_id }}</code></p>
-                <p><strong>📝 Opis:</strong> {{ lock.description or 'Brak opisu' }}</p>
-                {% if lock.last_seen %}
-                <p><strong>⏰ Ostatnio widziany:</strong> {{ lock.last_seen }}</p>
-                {% endif %}
+
+            <!-- Access Methods -->
+            <div class="form-card" style="margin-top: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="form-title" style="margin-bottom: 0;">🔑 Metody dostępu</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="showAddAccessModal()">
+                        ➕ Dodaj dostęp
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Typ</th>
+                                <th>Identyfikator</th>
+                                <th>Opis</th>
+                                <th>Ważny od</th>
+                                <th>Ważny do</th>
+                                <th>Status</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for access in access_methods %}
+                            <tr>
+                                <td>{{ '🔢 PIN' if access.type == 'pin' else '📇 RFID' }}</td>
+                                <td><code>{{ access.identifier }}</code></td>
+                                <td>{{ access.description }}</td>
+                                <td>{{ access.valid_from }}</td>
+                                <td>{{ access.valid_to or 'Bezterminowy' }}</td>
+                                <td>
+                                    {% if access.is_active %}
+                                    <span class="text-success">✅ Aktywny</span>
+                                    {% else %}
+                                    <span class="text-error">❌ Nieaktywny</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteAccess('{{ access.id }}')">
+                                        🗑️
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% if not access_methods %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
+                                    Brak zdefiniowanych metod dostępu
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-        
-        <!-- Access Methods -->
-        <div class="form-card" style="margin-top: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 class="form-title" style="margin-bottom: 0;">🔑 Metody dostępu</h2>
-                <button class="btn btn-secondary btn-sm" onclick="showAddAccessModal()">
-                    ➕ Dodaj dostęp
+
+            <!-- Access History -->
+            <div class="form-card" style="margin-top: 30px;">
+                <h2 class="form-title">📊 Historia dostępu</h2>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Czas</th>
+                                <th>Typ dostępu</th>
+                                <th>Akcja</th>
+                                <th>Status</th>
+                                <th>Szczegóły</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in access_history %}
+                            <tr>
+                                <td>{{ log.timestamp }}</td>
+                                <td>{{ '🔢 PIN' if log.access_type == 'pin' else '📇 RFID' if log.access_type == 'rfid'
+                                    else '🌐 Remote' }}</td>
+                                <td>{{ log.action }}</td>
+                                <td>
+                                    {% if log.success %}
+                                    <span class="text-success">✅ Sukces</span>
+                                    {% else %}
+                                    <span class="text-error">❌ Odmowa</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.details or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+
+                            {% if not access_history %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--dark-gray);">
+                                    Brak historii dostępu
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="form-card" style="margin-top: 30px; border: 2px solid var(--error);">
+                <h2 class="form-title" style="color: var(--error);">⚠️ Strefa zagrożenia</h2>
+                <p style="margin-bottom: 20px; color: var(--dark-gray);">
+                    Uwaga: Poniższe akcje są nieodwracalne
+                </p>
+                <button class="btn btn-danger" onclick="deleteLock()">
+                    🗑️ Usuń domek
                 </button>
             </div>
-            
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Typ</th>
-                            <th>Identyfikator</th>
-                            <th>Opis</th>
-                            <th>Ważny od</th>
-                            <th>Ważny do</th>
-                            <th>Status</th>
-                            <th>Akcje</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for access in access_methods %}
-                        <tr>
-                            <td>{{ '🔢 PIN' if access.type == 'pin' else '📇 RFID' }}</td>
-                            <td><code>{{ access.identifier }}</code></td>
-                            <td>{{ access.description }}</td>
-                            <td>{{ access.valid_from }}</td>
-                            <td>{{ access.valid_to or 'Bezterminowy' }}</td>
-                            <td>
-                                {% if access.is_active %}
-                                <span class="text-success">✅ Aktywny</span>
-                                {% else %}
-                                <span class="text-error">❌ Nieaktywny</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteAccess('{{ access.id }}')">
-                                    🗑️
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        
-                        {% if not access_methods %}
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
-                                Brak zdefiniowanych metod dostępu
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Access History -->
-        <div class="form-card" style="margin-top: 30px;">
-            <h2 class="form-title">📊 Historia dostępu</h2>
-            
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Czas</th>
-                            <th>Typ dostępu</th>
-                            <th>Akcja</th>
-                            <th>Status</th>
-                            <th>Szczegóły</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in access_history %}
-                        <tr>
-                            <td>{{ log.timestamp }}</td>
-                            <td>{{ '🔢 PIN' if log.access_type == 'pin' else '📇 RFID' if log.access_type == 'rfid' else '🌐 Remote' }}</td>
-                            <td>{{ log.action }}</td>
-                            <td>
-                                {% if log.success %}
-                                <span class="text-success">✅ Sukces</span>
-                                {% else %}
-                                <span class="text-error">❌ Odmowa</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ log.details or '-' }}</td>
-                        </tr>
-                        {% endfor %}
-                        
-                        {% if not access_history %}
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 40px; color: var(--dark-gray);">
-                                Brak historii dostępu
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Danger Zone -->
-        <div class="form-card" style="margin-top: 30px; border: 2px solid var(--error);">
-            <h2 class="form-title" style="color: var(--error);">⚠️ Strefa zagrożenia</h2>
-            <p style="margin-bottom: 20px; color: var(--dark-gray);">
-                Uwaga: Poniższe akcje są nieodwracalne
-            </p>
-            <button class="btn btn-danger" onclick="deleteLock()">
-                🗑️ Usuń domek
-            </button>
-        </div>
+        </main>
+    </div>
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        async function toggleLock(action) {
+            if (!confirm(`Czy na pewno chcesz ${action === 'lock' ? 'zamknąć' : 'otworzyć'} ten domek?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/locks/{{ lock.id }}/command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: action })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Komenda wysłana pomyślnie');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    alert('❌ Błąd: ' + (data.detail || 'Nie udało się wykonać operacji'));
+                }
+            } catch (error) {
+                alert('❌ Błąd połączenia: ' + error.message);
+            }
+        }
+
+        function showAddAccessModal() {
+            // TODO: Implement modal for adding access methods
+            alert('Funkcja w przygotowaniu - użyj API do dodania metod dostępu');
+        }
+
+        async function deleteAccess(accessId) {
+            if (!confirm('Czy na pewno chcesz usunąć tę metodę dostępu?')) {
+                return;
+            }
+
+            // TODO: Implement access method deletion
+            alert('Funkcja w przygotowaniu');
+        }
+
+        async function deleteLock() {
+            if (!confirm('⚠️ CZY NA PEWNO chcesz usunąć ten domek?\n\nSpowoduje to również usunięcie wszystkich metod dostępu i historii. Ta operacja jest NIEODWRACALNA!')) {
+                return;
+            }
+
+            if (!confirm('Ostatnia szansa - czy naprawdę chcesz usunąć domek "{{ lock.name }}"?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/locks/{{ lock.id }}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('✅ Domek został usunięty');
+                    window.location.href = '/dashboard';
+                } else {
+                    const data = await response.json();
+                    alert('❌ Błąd: ' + (data.detail || 'Nie udało się usunąć domku'));
+                }
+            } catch (error) {
+                alert('❌ Błąd połączenia: ' + error.message);
+            }
+        }
+    </script>
     </main>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    async function toggleLock(action) {
-        if (!confirm(`Czy na pewno chcesz ${action === 'lock' ? 'zamknąć' : 'otworzyć'} ten domek?`)) {
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/api/v1/locks/{{ lock.id }}/command`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ command: action })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                alert('✅ Komenda wysłana pomyślnie');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                alert('❌ Błąd: ' + (data.detail || 'Nie udało się wykonać operacji'));
-            }
-        } catch (error) {
-            alert('❌ Błąd połączenia: ' + error.message);
-        }
-    }
-    
-    function showAddAccessModal() {
-        // TODO: Implement modal for adding access methods
-        alert('Funkcja w przygotowaniu - użyj API do dodania metod dostępu');
-    }
-    
-    async function deleteAccess(accessId) {
-        if (!confirm('Czy na pewno chcesz usunąć tę metodę dostępu?')) {
-            return;
-        }
-        
-        // TODO: Implement access method deletion
-        alert('Funkcja w przygotowaniu');
-    }
-    
-    async function deleteLock() {
-        if (!confirm('⚠️ CZY NA PEWNO chcesz usunąć ten domek?\n\nSpowoduje to również usunięcie wszystkich metod dostępu i historii. Ta operacja jest NIEODWRACALNA!')) {
-            return;
-        }
-        
-        if (!confirm('Ostatnia szansa - czy naprawdę chcesz usunąć domek "{{ lock.name }}"?')) {
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/api/v1/locks/{{ lock.id }}`, {
-                method: 'DELETE'
-            });
-            
-            if (response.ok) {
-                alert('✅ Domek został usunięty');
-                window.location.href = '/dashboard';
-            } else {
-                const data = await response.json();
-                alert('❌ Błąd: ' + (data.detail || 'Nie udało się usunąć domku'));
-            }
-        } catch (error) {
-            alert('❌ Błąd połączenia: ' + error.message);
-        }
-    }
-</script>
+</div>
 {% endblock %}

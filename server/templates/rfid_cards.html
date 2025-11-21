@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dodaj domek - PineLock{% endblock %}
+{% block title %}Karty RFID - PineLock{% endblock %}
 
 {% block content %}
 <!-- Mobile Overlay -->
@@ -10,7 +10,7 @@
 <div class="mobile-header">
     <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
         <span>☰</span>
-        <span class="mobile-title">Dodaj domek</span>
+        <span class="mobile-title">Karty RFID</span>
     </button>
 </div>
 
@@ -78,7 +78,9 @@
             </a>
         </div>
         <div class="desktop-navbar-user">
-            <a href="/ui/logout" class="desktop-nav-item">
+            <div class="user-avatar">{{ user_initial }}</div>
+            <span>{{ username }}</span>
+            <a href="/ui/logout" class="desktop-nav-item" style="margin-left: 10px;">
                 <span class="desktop-nav-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -97,6 +99,7 @@
             <div class="sidebar-header">
                 <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
                 <h2 class="sidebar-title">PineLock</h2>
+                <p class="sidebar-subtitle">System zarządzania</p>
             </div>
 
             <nav class="sidebar-nav">
@@ -169,166 +172,122 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Header -->
-            <div class="header">
+            <div class="content-header">
                 <div>
-                    <a href="/ui/locks"
-                        style="color: var(--pine-green); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 10px;">
-                        ← Powrót do listy
-                    </a>
-                    <h1 class="header-title" style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <h1>Karty RFID</h1>
+                    <p class="subtitle">Zarządzaj dostępem przez karty RFID (wkrótce)</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" disabled title="Funkcja w przygotowaniu">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
                         </svg>
-                        Dodaj nowy domek
-                    </h1>
+                        Dodaj kartę
+                    </button>
                 </div>
             </div>
 
-            {% if error %}
-            <div class="alert alert-error">
-                <span>❌</span>
-                <span>{{ error }}</span>
-            </div>
+            {% if message %}
+            <div class="alert alert-success">{{ message }}</div>
             {% endif %}
 
-            <!-- Form Card -->
-            <div class="form-card">
-                <h2 class="form-title">🔐 Informacje o domku</h2>
+            {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
 
-                <form method="POST" action="/locks/new">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="name" class="form-label">Nazwa domku *</label>
-                            <input type="text" id="name" name="name" class="form-input" placeholder="np. Domek nr 1"
-                                required autofocus>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="device_id" class="form-label">Device ID *</label>
-                            <input type="text" id="device_id" name="device_id" class="form-input"
-                                placeholder="np. LOCK001" required pattern="[A-Za-z0-9_-]+"
-                                title="Tylko litery, cyfry, myślnik i podkreślenie">
-                            <small style="color: var(--dark-gray); font-size: 12px; display: block; margin-top: 5px;">
-                                Unikalny identyfikator urządzenia (używany w MQTT)
-                            </small>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="location" class="form-label">Lokalizacja *</label>
-                            <input type="text" id="location" name="location" class="form-input"
-                                placeholder="np. Mazury, jezioro Niegocin" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description" class="form-label">Opis</label>
-                        <textarea id="description" name="description" class="form-input" rows="4"
-                            placeholder="Dodatkowe informacje o domku..."
-                            style="resize: vertical; min-height: 100px;"></textarea>
-                    </div>
-
-                    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid var(--light-gray);">
-                        <h3 style="color: var(--forest-green); margin-bottom: 15px;">📝 Uwagi:</h3>
-                        <ul style="color: var(--dark-gray); line-height: 1.8;">
-                            <li>Device ID musi być unikalny w systemie</li>
-                            <li>Urządzenie fizyczne musi być skonfigurowane z tym samym Device ID</li>
-                            <li>Po dodaniu domku, skonfiguruj metody dostępu (PIN/RFID) w szczegółach</li>
-                            <li>Urządzenie pojawi się jako "Offline" dopóki nie połączy się z serwerem</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-top: 30px; display: flex; gap: 15px;">
-                        <button type="submit" class="btn btn-primary">
-                            ✅ Dodaj domek
-                        </button>
-                        <a href="/ui/locks" class="btn" style="background: var(--light-gray); color: var(--dark-gray);">
-                            ❌ Anuluj
-                        </a>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Instructions Card -->
-            <div class="form-card" style="margin-top: 30px; background: var(--cream);">
-                <h2 class="form-title">🔧 Co dalej?</h2>
-
-                <div style="color: var(--dark-gray); line-height: 1.8;">
-                    <h3 style="color: var(--forest-green); margin-bottom: 10px; font-size: 18px;">
-                        1️⃣ Skonfiguruj urządzenie fizyczne
-                    </h3>
-                    <p style="margin-bottom: 20px;">
-                        W pliku <code>config.h</code> firmware ESP32 ustaw:
-                    </p>
-                    <pre
-                        style="background: var(--white); padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px; border: 1px solid var(--medium-gray);">
-#define DEVICE_ID "TWOJ_DEVICE_ID"
-#define MQTT_SERVER "adres_serwera"
-#define WIFI_SSID "nazwa_wifi"
-#define WIFI_PASSWORD "haslo_wifi"</pre>
-
-                    <h3 style="color: var(--forest-green); margin: 20px 0 10px; font-size: 18px;">
-                        2️⃣ Wgraj firmware na ESP32
-                    </h3>
-                    <p style="margin-bottom: 20px;">
-                        Skompiluj i wgraj firmware używając PlatformIO:
-                    </p>
-                    <pre
-                        style="background: var(--white); padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px; border: 1px solid var(--medium-gray);">
-cd firmware/lock_node
-pio run --target upload</pre>
-
-                    <h3 style="color: var(--forest-green); margin: 20px 0 10px; font-size: 18px;">
-                        3️⃣ Dodaj metody dostępu
-                    </h3>
-                    <p style="margin-bottom: 10px;">
-                        Po połączeniu urządzenia, przejdź do szczegółów domku i dodaj:
-                    </p>
-                    <ul style="margin-left: 20px;">
-                        <li>🔢 Kody PIN dla użytkowników</li>
-                        <li>📇 Karty RFID</li>
-                        <li>⏰ Okresy ważności dostępu</li>
+            <!-- Info Banner -->
+            <div class="alert alert-info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="margin-right: 8px;">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <div>
+                    <strong>Funkcja w przygotowaniu</strong><br>
+                    System obsługi kart RFID jest obecnie w fazie rozwoju. W przyszłości będzie możliwe:
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li>Dodawanie i usuwanie kart RFID</li>
+                        <li>Przypisywanie kart do domków</li>
+                        <li>Określanie okresu ważności kart</li>
+                        <li>Śledzenie użycia kart w logach dostępu</li>
                     </ul>
                 </div>
             </div>
+
+            <!-- Stats Cards (placeholders) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Wszystkie karty</div>
+                    <div class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Aktywne</div>
+                    <div class="stat-value stat-success">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Wygasłe</div>
+                    <div class="stat-value stat-warning">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Domki z kartami</div>
+                    <div class="stat-value">0</div>
+                </div>
+            </div>
+
+            <!-- RFID Cards Table (placeholder) -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lista kart RFID</h2>
+                </div>
+                <div class="card-content">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                            <line x1="1" y1="10" x2="23" y2="10" />
+                        </svg>
+                        <h3>Brak kart RFID</h3>
+                        <p>System obsługi kart RFID jest w przygotowaniu.</p>
+                        <p>Ta funkcjonalność będzie dostępna w przyszłej wersji.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placeholder for future implementation -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h2>Planowane funkcje</h2>
+                </div>
+                <div class="card-content">
+                    <div style="padding: 20px;">
+                        <h3 style="margin-top: 0;">Integracja z czytnikiem RFID</h3>
+                        <p>Aby używać kart RFID z systemem PineLock, potrzebne będzie:</p>
+                        <ul>
+                            <li><strong>Czytnik RFID</strong> - moduł RC522 lub PN532 podłączony do ESP32</li>
+                            <li><strong>Aktualizacja firmware</strong> - dodanie obsługi protokołu RFID w urządzeniu
+                            </li>
+                            <li><strong>Rejestracja kart</strong> - możliwość nauki nowych kart przez system</li>
+                            <li><strong>Synchronizacja</strong> - przekazywanie listy autoryzowanych kart przez MQTT
+                            </li>
+                        </ul>
+
+                        <h3>Schemat działania</h3>
+                        <ol>
+                            <li>Administrator dodaje kartę RFID w panelu (przypisuje do domku)</li>
+                            <li>Serwer wysyła zaktualizowaną listę kart do urządzenia przez MQTT</li>
+                            <li>Urządzenie zapisuje karty w pamięci ESP32</li>
+                            <li>Przy przyłożeniu karty, czytnik sprawdza UID z listą autoryzowanych kart</li>
+                            <li>Jeśli karta jest autoryzowana i aktywna, zamek się otwiera</li>
+                            <li>Zdarzenie dostępu jest rejestrowane w logach</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
-    {% endblock %}
-
-    {% block scripts %}
-    <script>
-        // Validate device ID format on input
-        document.getElementById('device_id').addEventListener('input', function (e) {
-            const value = e.target.value;
-            const isValid = /^[A-Za-z0-9_-]*$/.test(value);
-
-            if (!isValid && value.length > 0) {
-                e.target.style.borderColor = 'var(--error)';
-            } else {
-                e.target.style.borderColor = '';
-            }
-        });
-
-        // Form validation
-        document.querySelector('form').addEventListener('submit', function (e) {
-            const deviceId = document.getElementById('device_id').value;
-
-            if (!/^[A-Za-z0-9_-]+$/.test(deviceId)) {
-                e.preventDefault();
-                alert('❌ Device ID może zawierać tylko litery, cyfry, myślnik i podkreślenie');
-                return false;
-            }
-
-            // Show loading state
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Dodawanie...';
-        });
-    </script>
     </main>
 </div>
 </div>

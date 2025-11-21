@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
@@ -303,8 +304,35 @@ async def list_access_logs(
 @router.get("/logs/server")
 async def get_server_logs(limit: int = 100):
     """Get server logs."""
-    # For now, return empty list - can be extended to capture actual logs
-    return []
+    logs = []
+    log_file = Path("server.log")
+    
+    if log_file.exists():
+        try:
+            with open(log_file, "r") as f:
+                lines = f.readlines()
+                # Process last N lines
+                for line in lines[-limit:]:
+                    try:
+                        # Parse line: 2024-05-21 10:00:00,000 - app.main - INFO - Message
+                        parts = line.split(" - ")
+                        if len(parts) >= 4:
+                            timestamp = parts[0]
+                            module = parts[1]
+                            level = parts[2]
+                            message = " - ".join(parts[3:]).strip()
+                            logs.append({
+                                "timestamp": timestamp,
+                                "level": level,
+                                "module": module,
+                                "message": message
+                            })
+                    except Exception:
+                        continue
+        except Exception as e:
+            logging.error(f"Error reading log file: {e}")
+            
+    return list(reversed(logs))
 
 
 @router.get("/logs/nodes")

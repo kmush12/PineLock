@@ -18,6 +18,11 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# Add FileHandler to save logs to file
+file_handler = logging.FileHandler('server.log')
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
 
 

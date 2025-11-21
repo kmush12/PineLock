@@ -1,16 +1,63 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e5945">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}PineLock{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
 </head>
-<body>
-    {% block content %}
-    {% endblock %}
-    
+
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+    <div style="flex: 1;">
+        {% block content %}
+        {% endblock %}
+    </div>
+    {% if request.endpoint != 'ui.login' %}
+    <!-- Footer -->
+    <footer
+        style="background: var(--forest-green); color: white; text-align: center; padding: 20px; font-size: 14px; width: 100%; margin-top: auto;">
+        <p style="margin: 0;">PineLock © 2025</p>
+    </footer>
+    {% endif %}
+
+    <script>
+        // Global mobile menu functions
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+            }
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        // Close menu when clicking on nav items on mobile
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        closeMobileMenu();
+                    }
+                });
+            });
+        });
+    </script>
+
     {% block scripts %}
     {% endblock %}
 </body>
+
 </html>

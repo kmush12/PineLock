@@ -21,22 +21,23 @@
             <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="desktop-navbar-logo">
             <div>
                 <h1 class="desktop-navbar-title">PineLock</h1>
-                <p class="desktop-navbar-subtitle">System zarządzania</p>
             </div>
         </div>
-                <div class="desktop-navbar-nav">
+        <div class="desktop-navbar-nav">
             <a href="/ui/locks" class="desktop-nav-item {% if active_page == 'domki' %}active{% endif %}">
                 <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                 </span>
                 Domki
             </a>
             <a href="/ui/access-codes" class="desktop-nav-item {% if active_page == 'access-codes' %}active{% endif %}">
                 <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="6" width="20" height="12" rx="2"></rect>
                         <circle cx="12" cy="12" r="2"></circle>
                         <path d="M6 12h.01M18 12h.01"></path>
@@ -46,7 +47,8 @@
             </a>
             <a href="/ui/rfid-cards" class="desktop-nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
                 <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                         <line x1="1" y1="10" x2="23" y2="10"></line>
                     </svg>
@@ -55,29 +57,33 @@
             </a>
             <a href="/ui/access-logs" class="desktop-nav-item {% if active_page == 'access-logs' %}active{% endif %}">
                 <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </span>
                 Historia
             </a>
             <a href="/ui/settings" class="desktop-nav-item {% if active_page == 'settings' %}active{% endif %}">
                 <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
                     </svg>
                 </span>
                 Ustawienia
             </a>
         </div>
         <div class="desktop-navbar-user">
-            <a href="/ui/logout" class="desktop-nav-item">
-                                <span class="desktop-nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="user-avatar">{{ user_initial }}</div>
+            <span>{{ username }}</span>
+            <a href="/ui/logout" class="desktop-nav-item" style="margin-left: 10px;">
+                <span class="desktop-nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
                         <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -88,190 +94,208 @@
         </div>
     </nav>
     <div class="content-wrapper">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
-            <h2 class="sidebar-title">PineLock</h2>
-            <p class="sidebar-subtitle">System zarządzania</p>
-        </div>
-        
-                <nav class="sidebar-nav">
-            <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                </span>
-                Domki
-            </a>
-            <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                        <circle cx="12" cy="12" r="2"></circle>
-                        <path d="M6 12h.01M18 12h.01"></path>
-                    </svg>
-                </span>
-                Kody PIN
-            </a>
-            <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                </span>
-                Karty RFID
-            </a>
-            <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                </span>
-                Historia dostępu
-            </a>
-            <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                </span>
-                Ustawienia
-            </a>
-            <a href="/ui/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <span class="nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                </span>
-                Wyloguj się
-            </a>
-        </nav>
-    </aside>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-<div class="content-header">
-    <div>
-        <h1>Karty RFID</h1>
-        <p class="subtitle">Zarządzaj dostępem przez karty RFID (wkrótce)</p>
-    </div>
-    <div class="header-actions">
-        <button class="btn-primary" disabled title="Funkcja w przygotowaniu">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Dodaj kartę
-        </button>
-    </div>
-</div>
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+                <h2 class="sidebar-title">PineLock</h2>
+                <p class="sidebar-subtitle">System zarządzania</p>
+            </div>
 
-{% if message %}
-<div class="alert alert-success">{{ message }}</div>
-{% endif %}
+            <nav class="sidebar-nav">
+                <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </span>
+                    Domki
+                </a>
+                <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <path d="M6 12h.01M18 12h.01"></path>
+                        </svg>
+                    </span>
+                    Kody PIN
+                </a>
+                <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </span>
+                    Karty RFID
+                </a>
+                <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </span>
+                    Historia
+                </a>
+                <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </span>
+                    Ustawienia
+                </a>
+                <a href="/ui/logout" class="nav-item"
+                    style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <span class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </span>
+                    Wyloguj się
+                </a>
+            </nav>
+        </aside>
 
-{% if error %}
-<div class="alert alert-error">{{ error }}</div>
-{% endif %}
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <div>
+                    <h1 style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        Karty RFID
+                    </h1>
+                    <p class="subtitle">Zarządzaj dostępem przez karty RFID (wkrótce)</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" disabled title="Funkcja w przygotowaniu">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Dodaj kartę
+                    </button>
+                </div>
+            </div>
 
-<!-- Info Banner -->
-<div class="alert alert-info">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="16" x2="12" y2="12"/>
-        <line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>
-    <div>
-        <strong>Funkcja w przygotowaniu</strong><br>
-        System obsługi kart RFID jest obecnie w fazie rozwoju. W przyszłości będzie możliwe:
-        <ul style="margin-top: 8px; margin-bottom: 0;">
-            <li>Dodawanie i usuwanie kart RFID</li>
-            <li>Przypisywanie kart do domków</li>
-            <li>Określanie okresu ważności kart</li>
-            <li>Śledzenie użycia kart w logach dostępu</li>
-        </ul>
-    </div>
-</div>
+            {% if message %}
+            <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
 
-<!-- Stats Cards (placeholders) -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-label">Wszystkie karty</div>
-        <div class="stat-value">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Aktywne</div>
-        <div class="stat-value stat-success">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Wygasłe</div>
-        <div class="stat-value stat-warning">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Domki z kartami</div>
-        <div class="stat-value">0</div>
-    </div>
-</div>
+            {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
 
-<!-- RFID Cards Table (placeholder) -->
-<div class="card">
-    <div class="card-header">
-        <h2>Lista kart RFID</h2>
-    </div>
-    <div class="card-content">
-        <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                <line x1="1" y1="10" x2="23" y2="10"/>
-            </svg>
-            <h3>Brak kart RFID</h3>
-            <p>System obsługi kart RFID jest w przygotowaniu.</p>
-            <p>Ta funkcjonalność będzie dostępna w przyszłej wersji.</p>
-        </div>
-    </div>
-</div>
+            <!-- Info Banner -->
+            <div class="alert alert-info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="margin-right: 8px;">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <div>
+                    <strong>Funkcja w przygotowaniu</strong><br>
+                    System obsługi kart RFID jest obecnie w fazie rozwoju. W przyszłości będzie możliwe:
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li>Dodawanie i usuwanie kart RFID</li>
+                        <li>Przypisywanie kart do domków</li>
+                        <li>Określanie okresu ważności kart</li>
+                        <li>Śledzenie użycia kart w logach dostępu</li>
+                    </ul>
+                </div>
+            </div>
 
-<!-- Placeholder for future implementation -->
-<div class="card" style="margin-top: 20px;">
-    <div class="card-header">
-        <h2>Planowane funkcje</h2>
-    </div>
-    <div class="card-content">
-        <div style="padding: 20px;">
-            <h3 style="margin-top: 0;">Integracja z czytnikiem RFID</h3>
-            <p>Aby używać kart RFID z systemem PineLock, potrzebne będzie:</p>
-            <ul>
-                <li><strong>Czytnik RFID</strong> - moduł RC522 lub PN532 podłączony do ESP32</li>
-                <li><strong>Aktualizacja firmware</strong> - dodanie obsługi protokołu RFID w urządzeniu</li>
-                <li><strong>Rejestracja kart</strong> - możliwość nauki nowych kart przez system</li>
-                <li><strong>Synchronizacja</strong> - przekazywanie listy autoryzowanych kart przez MQTT</li>
-            </ul>
-            
-            <h3>Schemat działania</h3>
-            <ol>
-                <li>Administrator dodaje kartę RFID w panelu (przypisuje do domku)</li>
-                <li>Serwer wysyła zaktualizowaną listę kart do urządzenia przez MQTT</li>
-                <li>Urządzenie zapisuje karty w pamięci ESP32</li>
-                <li>Przy przyłożeniu karty, czytnik sprawdza UID z listą autoryzowanych kart</li>
-                <li>Jeśli karta jest autoryzowana i aktywna, zamek się otwiera</li>
-                <li>Zdarzenie dostępu jest rejestrowane w logach</li>
-            </ol>
-        </div>
-    </div>
-</div>
+            <!-- Stats Cards (placeholders) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Wszystkie karty</div>
+                    <div class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Aktywne</div>
+                    <div class="stat-value stat-success">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Wygasłe</div>
+                    <div class="stat-value stat-warning">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Domki z kartami</div>
+                    <div class="stat-value">0</div>
+                </div>
+            </div>
 
+            <!-- RFID Cards Table (placeholder) -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lista kart RFID</h2>
+                </div>
+                <div class="card-content">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                            <line x1="1" y1="10" x2="23" y2="10" />
+                        </svg>
+                        <h3>Brak kart RFID</h3>
+                        <p>System obsługi kart RFID jest w przygotowaniu.</p>
+                        <p>Ta funkcjonalność będzie dostępna w przyszłej wersji.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placeholder for future implementation -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h2>Planowane funkcje</h2>
+                </div>
+                <div class="card-content">
+                    <div style="padding: 20px;">
+                        <h3 style="margin-top: 0;">Integracja z czytnikiem RFID</h3>
+                        <p>Aby używać kart RFID z systemem PineLock, potrzebne będzie:</p>
+                        <ul>
+                            <li><strong>Czytnik RFID</strong> - moduł RC522 lub PN532 podłączony do ESP32</li>
+                            <li><strong>Aktualizacja firmware</strong> - dodanie obsługi protokołu RFID w urządzeniu
+                            </li>
+                            <li><strong>Rejestracja kart</strong> - możliwość nauki nowych kart przez system</li>
+                            <li><strong>Synchronizacja</strong> - przekazywanie listy autoryzowanych kart przez MQTT
+                            </li>
+                        </ul>
+
+                        <h3>Schemat działania</h3>
+                        <ol>
+                            <li>Administrator dodaje kartę RFID w panelu (przypisuje do domku)</li>
+                            <li>Serwer wysyła zaktualizowaną listę kart do urządzenia przez MQTT</li>
+                            <li>Urządzenie zapisuje karty w pamięci ESP32</li>
+                            <li>Przy przyłożeniu karty, czytnik sprawdza UID z listą autoryzowanych kart</li>
+                            <li>Jeśli karta jest autoryzowana i aktywna, zamek się otwiera</li>
+                            <li>Zdarzenie dostępu jest rejestrowane w logach</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
     </main>
 </div>
-    </main>
-    </div>
 </div>
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Kody PIN - PineLock{% endblock %}
+{% block title %}Historia dostępu - PineLock{% endblock %}
 
 {% block content %}
 <!-- Mobile Overlay -->
@@ -10,7 +10,7 @@
 <div class="mobile-header">
     <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
         <span>☰</span>
-        <span class="mobile-title">Kody PIN</span>
+        <span class="mobile-title">Historia</span>
     </button>
 </div>
 
@@ -174,16 +174,8 @@
         <main class="main-content">
             <div class="content-header">
                 <div>
-                    <h1 style="display: flex; align-items: center; gap: 10px;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                            <circle cx="12" cy="12" r="2"></circle>
-                            <path d="M6 12h.01M18 12h.01"></path>
-                        </svg>
-                        Kody PIN
-                    </h1>
-                    <p class="subtitle">Zarządzaj kodami dostępu do wszystkich domków</p>
+                    <h1>Historia dostępu</h1>
+                    <p class="subtitle">Logi prób dostępu do wszystkich domków</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn-secondary" onclick="toggleFilter()">
@@ -193,12 +185,21 @@
                         </svg>
                         Filtruj
                     </button>
+                    <button class="btn-secondary" onclick="exportLogs()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Eksportuj
+                    </button>
                 </div>
             </div>
 
             <!-- Filter Panel (hidden by default) -->
             <div id="filter-panel" class="filter-panel" style="display: none;">
-                <form method="GET" action="/ui/access-codes">
+                <form method="GET" action="/ui/access-logs">
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Domek</label>
@@ -212,209 +213,196 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Status</label>
-                            <select name="status" class="form-control">
-                                <option value="" {% if not filter_status %}selected{% endif %}>Wszystkie</option>
-                                <option value="active" {% if filter_status=='active' %}selected{% endif %}>Aktywne
+                            <label>Typ dostępu</label>
+                            <select name="access_type" class="form-control">
+                                <option value="" {% if not filter_access_type %}selected{% endif %}>Wszystkie</option>
+                                <option value="pin" {% if filter_access_type=='pin' %}selected{% endif %}>Kod PIN
                                 </option>
-                                <option value="inactive" {% if filter_status=='inactive' %}selected{% endif %}>
-                                    Nieaktywne</option>
+                                <option value="rfid" {% if filter_access_type=='rfid' %}selected{% endif %}>Karta RFID
+                                </option>
+                                <option value="remote" {% if filter_access_type=='remote' %}selected{% endif %}>Zdalnie
+                                </option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="success" class="form-control">
+                                <option value="" {% if filter_success is none %}selected{% endif %}>Wszystkie</option>
+                                <option value="true" {% if filter_success==true %}selected{% endif %}>Sukces</option>
+                                <option value="false" {% if filter_success==false %}selected{% endif %}>Odmowa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Data od</label>
+                            <input type="datetime-local" name="date_from" class="form-control"
+                                value="{{ filter_date_from or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Data do</label>
+                            <input type="datetime-local" name="date_to" class="form-control"
+                                value="{{ filter_date_to or '' }}">
                         </div>
                         <div class="form-group" style="align-self: flex-end;">
                             <button type="submit" class="btn-primary">Zastosuj</button>
-                            <a href="/ui/access-codes" class="btn-secondary">Wyczyść</a>
+                            <a href="/ui/access-logs" class="btn-secondary">Wyczyść</a>
                         </div>
                     </div>
                 </form>
             </div>
 
             {% if message %}
-            <div class="alert alert-success">
-                {% if message == 'code_created' %}
-                Kod PIN został utworzony.
-                {% elif message == 'code_updated' %}
-                Kod PIN został zaktualizowany.
-                {% elif message == 'code_deleted' %}
-                Kod PIN został usunięty.
-                {% else %}
-                {{ message }}
-                {% endif %}
-            </div>
+            <div class="alert alert-success">{{ message }}</div>
             {% endif %}
 
             {% if error %}
-            <div class="alert alert-error">
-                {% if error == 'invalid_pin' %}
-                Kod PIN musi składać się tylko z cyfr i mieć długość 4-10 znaków.
-                {% elif error == 'not_found' %}
-                Nie znaleziono kodu PIN.
-                {% else %}
-                {{ error }}
-                {% endif %}
-            </div>
+            <div class="alert alert-error">{{ error }}</div>
             {% endif %}
 
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Wszystkie kody</div>
-                    <div class="stat-value">{{ total_codes }}</div>
+                    <div class="stat-label">Wszystkie logi</div>
+                    <div class="stat-value">{{ total_logs }}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Aktywne</div>
-                    <div class="stat-value stat-success">{{ active_codes }}</div>
+                    <div class="stat-label">Udane próby</div>
+                    <div class="stat-value stat-success">{{ successful_attempts }}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Nieaktywne</div>
-                    <div class="stat-value stat-warning">{{ inactive_codes }}</div>
+                    <div class="stat-label">Nieudane próby</div>
+                    <div class="stat-value stat-error">{{ failed_attempts }}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Domki z kodami</div>
-                    <div class="stat-value">{{ locks_with_codes }}</div>
+                    <div class="stat-label">Dziś</div>
+                    <div class="stat-value">{{ today_count }}</div>
                 </div>
             </div>
 
-            <!-- Access Codes Table -->
+            <!-- Access Logs Table -->
             <div class="card">
                 <div class="card-header">
-                    <h2>Lista kodów PIN</h2>
+                    <h2>Logi dostępu</h2>
                 </div>
                 <div class="card-content">
-                    {% if codes %}
+                    {% if logs %}
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Kod PIN</th>
-                                <th>Nazwa/Opis</th>
+                                <th>Data i czas</th>
                                 <th>Domek</th>
+                                <th>Typ dostępu</th>
+                                <th>Metoda</th>
                                 <th>Status</th>
-                                <th>Data utworzenia</th>
-                                <th>Akcje</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for code in codes %}
+                            {% for log in logs %}
                             <tr>
                                 <td>
-                                    <span class="code-display">{{ code.code }}</span>
-                                </td>
-                                <td>{{ code.name or '-' }}</td>
-                                <td>
-                                    <a href="/ui/locks/{{ code.lock.id }}" class="link">
-                                        {{ code.lock.name }}
-                                    </a>
-                                    {% if code.lock.location %}
-                                    <span class="text-muted">• {{ code.lock.location }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if code.is_active %}
-                                    <span class="badge badge-success">Aktywny</span>
-                                    {% else %}
-                                    <span class="badge badge-warning">Nieaktywny</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if code.created_at %}
-                                    {{ code.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% if log.timestamp %}
+                                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
                                     {% else %}
                                     -
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-icon"
-                                            onclick="editCode({{ code.id }}, '{{ code.code }}', '{{ code.name or '' }}', {{ 'true' if code.is_active else 'false' }}, {{ code.lock_id }})"
-                                            title="Edytuj">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                            </svg>
-                                        </button>
-                                        <button class="btn-icon btn-danger"
-                                            onclick="deleteCode({{ code.id }}, '{{ code.lock.name }}')" title="Usuń">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2">
-                                                <path
-                                                    d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                    <a href="/ui/locks/{{ log.lock.id }}" class="link">
+                                        {{ log.lock.name }}
+                                    </a>
+                                    {% if log.lock.location %}
+                                    <span class="text-muted">• {{ log.lock.location }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.access_type == 'pin' %}
+                                    <span class="badge" style="background-color: #3a8660;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                        Kod PIN
+                                    </span>
+                                    {% elif log.access_type == 'rfid' %}
+                                    <span class="badge" style="background-color: #2d6f51;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                                            <line x1="1" y1="10" x2="23" y2="10" />
+                                        </svg>
+                                        Karta RFID
+                                    </span>
+                                    {% elif log.access_type == 'remote' %}
+                                    <span class="badge" style="background-color: #1e5945;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <path
+                                                d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                                        </svg>
+                                        Zdalnie
+                                    </span>
+                                    {% else %}
+                                    <span class="badge">{{ log.access_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.access_method %}
+                                    <code>{{ log.access_method }}</code>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.success %}
+                                    <span class="badge badge-success">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                        Sukces
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-error">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                        </svg>
+                                        Odmowa
+                                    </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+
+                    {% if has_more %}
+                    <div style="text-align: center; padding: 20px;">
+                        <p class="text-muted">Wyświetlono {{ logs|length }} z {{ total_logs }} logów</p>
+                        <button class="btn-secondary" onclick="loadMore()">Załaduj więcej</button>
+                    </div>
+                    {% endif %}
+
                     {% else %}
                     <div class="empty-state">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.5">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
                         </svg>
-                        <h3>Brak kodów PIN</h3>
-                        <p>Nie znaleziono żadnych kodów dostępu.</p>
-                        <p>Dodaj kody PIN w szczegółach domków.</p>
+                        <h3>Brak logów dostępu</h3>
+                        <p>Nie znaleziono żadnych logów dostępu.</p>
+                        {% if filter_lock_id or filter_access_type or filter_success is not none %}
+                        <p>Spróbuj zmienić kryteria filtrowania.</p>
+                        {% else %}
+                        <p>Logi pojawią się gdy ktoś skorzysta z dostępu do domków.</p>
+                        {% endif %}
                     </div>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Edit Code Modal -->
-            <div id="editModal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>Edytuj kod PIN</h2>
-                        <button class="modal-close" onclick="closeEditModal()">&times;</button>
-                    </div>
-                    <form id="editForm" method="POST">
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="edit-code">Kod PIN *</label>
-                                <input type="text" id="edit-code" name="code" class="form-control" pattern="[0-9]{4,10}"
-                                    required placeholder="np. 1234">
-                                <small class="form-text">4-10 cyfr</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-name">Nazwa/Opis</label>
-                                <input type="text" id="edit-name" name="name" class="form-control"
-                                    placeholder="np. Gość letni 2024">
-                            </div>
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="edit-active" name="is_active" value="true">
-                                    <span>Kod aktywny</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeEditModal()">Anuluj</button>
-                            <button type="submit" class="btn-primary">Zapisz zmiany</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Delete Confirmation Modal -->
-            <div id="deleteModal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>Potwierdź usunięcie</h2>
-                        <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-                    </div>
-                    <form id="deleteForm" method="POST">
-                        <div class="modal-body">
-                            <p>Czy na pewno chcesz usunąć ten kod PIN z domku <strong id="delete-lock-name"></strong>?
-                            </p>
-                            <p class="text-warning">Tej operacji nie można cofnąć.</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Anuluj</button>
-                            <button type="submit" class="btn-danger">Usuń kod</button>
-                        </div>
-                    </form>
                 </div>
             </div>
 
@@ -424,38 +412,14 @@
                     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
                 }
 
-                function editCode(id, code, name, isActive, lockId) {
-                    document.getElementById('editForm').action = `/ui/access-codes/${id}/update`;
-                    document.getElementById('edit-code').value = code;
-                    document.getElementById('edit-name').value = name;
-                    document.getElementById('edit-active').checked = isActive;
-                    document.getElementById('editModal').style.display = 'flex';
+                function exportLogs() {
+                    // TODO: Implement CSV/Excel export
+                    alert('Eksport logów do CSV będzie dostępny wkrótce.');
                 }
 
-                function closeEditModal() {
-                    document.getElementById('editModal').style.display = 'none';
-                }
-
-                function deleteCode(id, lockName) {
-                    document.getElementById('deleteForm').action = `/ui/access-codes/${id}/delete`;
-                    document.getElementById('delete-lock-name').textContent = lockName;
-                    document.getElementById('deleteModal').style.display = 'flex';
-                }
-
-                function closeDeleteModal() {
-                    document.getElementById('deleteModal').style.display = 'none';
-                }
-
-                // Close modals on background click
-                window.onclick = function (event) {
-                    const editModal = document.getElementById('editModal');
-                    const deleteModal = document.getElementById('deleteModal');
-                    if (event.target === editModal) {
-                        closeEditModal();
-                    }
-                    if (event.target === deleteModal) {
-                        closeDeleteModal();
-                    }
+                function loadMore() {
+                    // TODO: Implement pagination
+                    alert('Ładowanie kolejnych logów będzie dostępne wkrótce.');
                 }
             </script>
         </main>

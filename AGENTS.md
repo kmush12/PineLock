@@ -1,5 +1,30 @@
 # PineLock Agent Guidelines
 
+## Project Structure
+
+### Root Directory
+- **`server/`**: Python FastAPI backend. Handles API requests, MQTT communication, and serves the web UI.
+- **`firmware/`**: C++ PlatformIO project for the ESP32 lock node.
+- **`AGENTS.md`**: This file. Guidelines for AI agents.
+- **`API_EXAMPLES.md`**: Examples of how to use the server API.
+- **`WEB_UI.md`**: Documentation for the Web UI routes and templates.
+- **`ARCHITECTURE.md`**: High-level system architecture documentation.
+- **`PROJECT_SUMMARY.md`**: Summary of the project status and features.
+
+### Key Components
+
+#### Server (`server/app/`)
+- **`main.py`**: Application entry point.
+- **`models.py`**: SQLAlchemy database models (User, Lock, Log, etc.).
+- **`database.py`**: Database connection and session management.
+- **`mqtt_client.py`**: MQTT client wrapper for communicating with the lock.
+- **`routes.py`**: API routes for controlling the lock and managing users.
+- **`ui_routes.py`**: Routes for serving HTML templates.
+- **`templates/`**: Jinja2 HTML templates for the UI.
+
+#### Firmware (`firmware/lock_node/`)
+- **`src/main.cpp`**: Main firmware logic (setup and loop).
+
 ## Build/Lint/Test Commands
 
 ### Server (Python/FastAPI)
@@ -41,5 +66,4 @@
 - **Security**: Never commit secrets, use environment variables
 - **Commits**: Write clear commit messages explaining what and why
 - **Testing**: Add tests for new features, run existing tests before committing
-- **Documentation**: Update README/docs for API/firmware changes</content>
-<parameter name="filePath">/home/kmush/Desktop/Work/Other_repo/PineLock/AGENTS.md
+- **Documentation**: Update README/docs for API/firmware changes
