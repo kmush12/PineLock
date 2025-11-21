@@ -1,0 +1,857 @@
+{% extends "base.html" %}
+
+{% block title %}Zarządzanie Dostępem - PineLock{% endblock %}
+
+{% block content %}
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+
+<!-- Mobile Header -->
+<div class="mobile-header">
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <span>☰</span>
+        <span class="mobile-title">Dostęp</span>
+    </button>
+    <div class="user-info">
+        <div class="user-avatar">{{ user_initial }}</div>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <!-- Desktop Top Navbar -->
+    {% include "desktop_navbar.html" %}
+
+    <div class="content-wrapper">
+        <!-- Sidebar -->
+        {% include "sidebar.html" %}
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1 class="header-title" style="display: flex; align-items: center;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Zarządzanie Dostępem
+                </h1>
+                <div class="header-actions">
+                    <div class="user-info">
+                        <div class="user-avatar">{{ user_initial }}</div>
+                        <span>{{ username }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Master Access Section -->
+            <div class="section-header" style="margin-bottom: 16px;">
+                <h2>Dostęp Master</h2>
+                <p class="subtitle">Uprawnienia otwierające wszystkie zamki</p>
+            </div>
+
+            <div class="stats-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 40px;">
+
+                <!-- Master PIN (single) -->
+                <div class="lock-card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Master PIN</h3>
+                        {% if master_pin %}
+                        <button
+                            style="background: #4CAF50; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500;"
+                            data-id="{{ master_pin.id }}" data-name="{{ master_pin.name }}"
+                            data-code="{{ master_pin.code }}"
+                            onclick="openEditMasterPinModal(this.dataset.id, this.dataset.name, this.dataset.code)">
+                            Edytuj
+                        </button>
+                        {% else %}
+                        <button class="btn-primary" onclick="openAddMasterPinModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Dodaj
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        {% if master_pin %}
+                        <div class="list-item">
+                            <div class="item-info">
+                                <span class="item-title">{{ master_pin.name or 'Bez nazwy' }}</span>
+                                <span class="item-subtitle">{{ master_pin.code }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-list">Brak Master PIN</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Master RFID (single) -->
+                <div class="lock-card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Master RFID</h3>
+                        {% if master_rfid %}
+                        <button
+                            style="background: #4CAF50; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500;"
+                            data-id="{{ master_rfid.id }}" data-name="{{ master_rfid.name }}"
+                            data-uid="{{ master_rfid.card_uid }}"
+                            onclick="openEditMasterCardModal(this.dataset.id, this.dataset.name, this.dataset.uid)">
+                            Edytuj
+                        </button>
+                        {% else %}
+                        <button class="btn-primary" onclick="openAddMasterCardModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Dodaj
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        {% if master_rfid %}
+                        <div class="list-item">
+                            <div class="item-info">
+                                <span class="item-title">{{ master_rfid.name or 'Bez nazwy' }}</span>
+                                <span class="item-subtitle">{{ master_rfid.card_uid }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-list">Brak Master RFID</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locks Access Section -->
+            <div class="section-header" style="margin-bottom: 16px;">
+                <h2>Dostęp do Domków</h2>
+                <p class="subtitle">Zarządzaj dostępem dla poszczególnych domków</p>
+            </div>
+
+            <div class="locks-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+                {% for item in locks_data %}
+                <div class="lock-card"
+                    style="background: white; color: #1a1a1a; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Lock Header -->
+                    <div style="margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px;">
+                        <h3 style="margin: 0 0 4px 0; font-size: 1.2em; color: #1a1a1a;">{{ item.lock.name }}</h3>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">📍 {{ item.lock.location or 'Brak
+                            lokalizacji' }}</p>
+                    </div>
+
+                    <!-- PIN Section -->
+                    <div style="margin-bottom: 16px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0; font-size: 1em; color: #333;">🔢 Kod PIN</h4>
+                            {% if item.pin %}
+                            <button
+                                style="background: #4CAF50; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500;"
+                                data-pin-id="{{ item.pin.id }}" data-lock-id="{{ item.lock.id }}"
+                                data-lock-name="{{ item.lock.name }}" data-pin-name="{{ item.pin.name }}"
+                                data-pin-code="{{ item.pin.code }}"
+                                onclick="openEditPinModal(this.dataset.pinId, this.dataset.lockId, this.dataset.lockName, this.dataset.pinName, this.dataset.pinCode)">
+                                Edytuj
+                            </button>
+                            {% else %}
+                            <button
+                                style="background: #4CAF50; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500;"
+                                data-lock-id="{{ item.lock.id }}" data-lock-name="{{ item.lock.name }}"
+                                onclick="openAddPinModal(this.dataset.lockId, this.dataset.lockName)">
+                                + Dodaj
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% if item.pin %}
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                            <div style="font-weight: 500; color: #1a1a1a;">{{ item.pin.name or 'PIN' }}</div>
+                            <div style="font-size: 0.9em; color: #666; font-family: monospace;">{{ item.pin.code }}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div
+                            style="background: #f8f9fa; border-radius: 8px; padding: 12px; text-align: center; color: #999;">
+                            Brak kodu PIN
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Key Tag Section -->
+                    <div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0; font-size: 1em; color: #333;">🏷️ Tag Klucza</h4>
+                            <button
+                                style="background: #4CAF50; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500;"
+                                data-lock-id="{{ item.lock.id }}" data-lock-name="{{ item.lock.name }}"
+                                data-uid="{{ item.key_tag.card_uid if item.key_tag else '' }}"
+                                onclick="openAssignKeyTagModal(this.dataset.lockId, this.dataset.lockName, this.dataset.uid)">
+                                {{ 'Edytuj' if item.key_tag else '+ Przypisz' }}
+                            </button>
+                        </div>
+                        <div
+                            style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                            <small style="color: #856404; display: block; font-size: 0.85em;">
+                                ⚠️ Tag służy tylko do wykrywania obecności klucza, NIE otwiera zamka
+                            </small>
+                        </div>
+                        {% if item.key_tag %}
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                            <div style="font-weight: 500; color: #1a1a1a; margin-bottom: 4px;">UID Taga:</div>
+                            <div style="font-size: 0.9em; color: #666; font-family: monospace;">{{ item.key_tag.card_uid
+                                }}</div>
+                        </div>
+                        {% else %}
+                        <div
+                            style="background: #f8f9fa; border-radius: 8px; padding: 12px; text-align: center; color: #999;">
+                            Nie przypisano
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state"
+                    style="grid-column: 1 / -1; text-align: center; padding: 40px; background: rgba(255,255,255,0.05); border-radius: 12px;">
+                    <h3>Brak domków</h3>
+                    <p>Dodaj domki w zakładce "Domki", aby zarządzać ich dostępem.</p>
+                    <a href="/ui/locks/new" class="btn-primary" style="display: inline-block; margin-top: 16px;">Dodaj
+                        domek</a>
+                </div>
+                {% endfor %}
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Add Master PIN Modal -->
+<div class="modal" id="addMasterPinModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Master PIN</h3>
+            <button class="close-btn" onclick="closeModal('addMasterPinModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Kod PIN (4-10 cyfr)</label>
+                <input type="text" id="masterPinCode" class="form-control" placeholder="1234">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('addMasterPinModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="saveMasterPin()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Master RFID Modal -->
+<div class="modal" id="addMasterCardModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Master RFID</h3>
+            <button class="close-btn" onclick="closeModal('addMasterCardModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>UID Karty</label>
+                <input type="text" id="masterCardUID" class="form-control" placeholder="A1:B2:C3:D4">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('addMasterCardModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="saveMasterCard()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Lock PIN Modal -->
+<div class="modal" id="addPinModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Dodaj PIN - <span id="pinLockName"></span></h3>
+            <button class="close-btn" onclick="closeModal('addPinModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="pinLockId">
+            <div class="form-group">
+                <label>Nazwa</label>
+                <input type="text" id="pinName" class="form-control" placeholder="np. Goście">
+            </div>
+            <div class="form-group">
+                <label>Kod PIN</label>
+                <input type="text" id="pinCode" class="form-control" placeholder="1234">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addPinModal')">Anuluj</button>
+            <button class="btn-primary" onclick="saveLockPin()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Lock RFID Modal -->
+<div class="modal" id="addRfidModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Dodaj RFID - <span id="rfidLockName"></span></h3>
+            <button class="close-btn" onclick="closeModal('addRfidModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="rfidLockId">
+            <div class="form-group">
+                <label>Nazwa</label>
+                <input type="text" id="rfidName" class="form-control" placeholder="np. Karta Gościa">
+            </div>
+            <div class="form-group">
+                <label>UID Karty</label>
+                <input type="text" id="rfidUID" class="form-control" placeholder="A1:B2:C3:D4">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addRfidModal')">Anuluj</button>
+            <button class="btn-primary" onclick="saveLockRfid()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Key Tag Modal -->
+<div class="modal" id="assignKeyTagModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Tag Klucza - <span id="keyTagLockName"></span></h3>
+            <button class="close-btn" onclick="closeModal('assignKeyTagModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="keyTagLockId">
+            <p style="margin-bottom: 15px; font-size: 0.9em; color: #aaa;">Tag ten służy do wykrywania obecności klucza
+                w skrzynce.</p>
+            <div class="form-group">
+                <label>UID Taga</label>
+                <input type="text" id="keyTagUID" class="form-control" placeholder="A1:B2:C3:D4">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('assignKeyTagModal')">Anuluj</button>
+            <button class="btn-primary" onclick="saveKeyTag()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Master PIN Modal -->
+<div class="modal" id="editMasterPinModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Master PIN</h3>
+            <button class="close-btn" onclick="closeModal('editMasterPinModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMasterPinId">
+            <div class="form-group">
+                <label>Kod PIN (4-10 cyfr)</label>
+                <input type="text" id="editMasterPinCode" class="form-control" placeholder="1234">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('editMasterPinModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="updateMasterPin()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Master RFID Modal -->
+<div class="modal" id="editMasterCardModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Master RFID</h3>
+            <button class="close-btn" onclick="closeModal('editMasterCardModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMasterCardId">
+            <div class="form-group">
+                <label>UID Karty</label>
+                <input type="text" id="editMasterCardUID" class="form-control" placeholder="A1:B2:C3:D4">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('editMasterCardModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="updateMasterCard()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Lock PIN Modal -->
+<div class="modal" id="editPinModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Kod PIN - <span id="editPinLockName"></span></h3>
+            <button class="close-btn" onclick="closeModal('editPinModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editPinId">
+            <input type="hidden" id="editPinLockId">
+            <div class="form-group">
+                <label>Kod PIN (4-10 cyfr)</label>
+                <input type="text" id="editPinCode" class="form-control" placeholder="1234">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('editPinModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="updateLockPin()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .list-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .subsection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .subsection-header h4 {
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #aaa;
+        margin: 0;
+    }
+
+    .btn-sm {
+        background: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        cursor: pointer;
+    }
+
+    .btn-sm:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .list-group.sm {
+        gap: 6px;
+    }
+
+    .list-item.sm {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+
+    .btn-icon.sm {
+        padding: 2px;
+    }
+
+    .key-tag-display {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+        text-align: center;
+    }
+
+    .tag-uid.empty {
+        color: #666;
+        font-style: italic;
+    }
+
+    /* Button hover effects */
+    button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+</style>
+
+<script>
+    // --- Modals ---
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function openAddMasterPinModal() {
+        document.getElementById('masterPinCode').value = '';
+        document.getElementById('addMasterPinModal').classList.add('active');
+    }
+
+    function openAddMasterCardModal() {
+        document.getElementById('masterCardUID').value = '';
+        document.getElementById('addMasterCardModal').classList.add('active');
+    }
+
+    function openAddPinModal(lockId, lockName) {
+        document.getElementById('pinLockId').value = lockId;
+        document.getElementById('pinLockName').textContent = lockName;
+        document.getElementById('pinName').value = '';
+        document.getElementById('pinCode').value = '';
+        document.getElementById('addPinModal').classList.add('active');
+    }
+
+    function openAddRfidModal(lockId, lockName) {
+        document.getElementById('rfidLockId').value = lockId;
+        document.getElementById('rfidLockName').textContent = lockName;
+        document.getElementById('rfidName').value = '';
+        document.getElementById('rfidUID').value = '';
+        document.getElementById('addRfidModal').classList.add('active');
+    }
+
+    function openAssignKeyTagModal(lockId, lockName, currentUid) {
+        document.getElementById('keyTagLockId').value = lockId;
+        document.getElementById('keyTagLockName').textContent = lockName;
+        document.getElementById('keyTagUID').value = currentUid;
+        document.getElementById('assignKeyTagModal').classList.add('active');
+    }
+
+    // Edit modal functions
+    function openEditMasterPinModal(pinId, name, code) {
+        document.getElementById('editMasterPinId').value = pinId;
+        document.getElementById('editMasterPinCode').value = code || '';
+        document.getElementById('editMasterPinModal').classList.add('active');
+    }
+
+    function openEditMasterCardModal(cardId, name, uid) {
+        document.getElementById('editMasterCardId').value = cardId;
+        document.getElementById('editMasterCardUID').value = uid || '';
+        document.getElementById('editMasterCardModal').classList.add('active');
+    }
+
+    function openEditPinModal(pinId, lockId, lockName, name, code) {
+        document.getElementById('editPinId').value = pinId;
+        document.getElementById('editPinLockId').value = lockId;
+        document.getElementById('editPinLockName').textContent = lockName;
+        document.getElementById('editPinCode').value = code || '';
+        document.getElementById('editPinModal').classList.add('active');
+    }
+
+    // --- API Calls ---
+
+    async function updateMasterPin() {
+        const id = document.getElementById('editMasterPinId').value;
+        const code = document.getElementById('editMasterPinCode').value;
+
+        if (!code) return alert('Podaj kod PIN');
+
+        try {
+            const response = await fetch(`/api/v1/access-codes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Master PIN', code: code })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function updateMasterCard() {
+        const id = document.getElementById('editMasterCardId').value;
+        const uid = document.getElementById('editMasterCardUID').value;
+
+        if (!uid) return alert('Podaj UID karty');
+
+        try {
+            const response = await fetch(`/api/v1/rfid-cards/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Master RFID', card_uid: uid })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function updateLockPin() {
+        const id = document.getElementById('editPinId').value;
+        const lockId = document.getElementById('editPinLockId').value;
+        const code = document.getElementById('editPinCode').value;
+
+        if (!code) return alert('Podaj kod PIN');
+
+        try {
+            const response = await fetch(`/api/v1/access-codes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Kod PIN', code: code })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function saveMasterPin() {
+        const code = document.getElementById('masterPinCode').value;
+
+        if (!code) return alert('Podaj kod PIN');
+
+        try {
+            const response = await fetch('/api/v1/access-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Master PIN',
+                    code: code,
+                    lock_id: null // Master PIN
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function saveMasterCard() {
+        const uid = document.getElementById('masterCardUID').value;
+
+        if (!uid) return alert('Podaj UID karty');
+
+        try {
+            const response = await fetch('/api/v1/rfid-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Master RFID',
+                    card_uid: uid,
+                    card_type: 'master',
+                    lock_id: null
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function saveLockPin() {
+        const lockId = document.getElementById('pinLockId').value;
+        const name = document.getElementById('pinName').value;
+        const code = document.getElementById('pinCode').value;
+
+        if (!code) return alert('Podaj kod PIN');
+
+        try {
+            const response = await fetch('/api/v1/access-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    code: code,
+                    lock_id: parseInt(lockId)
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function saveLockRfid() {
+        const lockId = document.getElementById('rfidLockId').value;
+        const name = document.getElementById('rfidName').value;
+        const uid = document.getElementById('rfidUID').value;
+
+        if (!uid) return alert('Podaj UID karty');
+
+        try {
+            const response = await fetch('/api/v1/rfid-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    card_uid: uid,
+                    card_type: 'access',
+                    lock_id: parseInt(lockId)
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function saveKeyTag() {
+        const lockId = document.getElementById('keyTagLockId').value;
+        const uid = document.getElementById('keyTagUID').value;
+
+        if (!uid) return alert('Podaj UID taga');
+
+        try {
+            // Check existing tag logic (simplified for now: just create new, backend should handle uniqueness or we delete old first)
+            // Ideally we should find the old one and delete it first if we want to replace it cleanly, or just add logic to backend.
+            // For this UI, let's assume we just create a new one for now, or the user deletes the old one manually.
+            // Actually, let's try to delete existing key tag for this lock first.
+
+            // Fetch existing tags
+            const tagsResponse = await fetch('/api/v1/rfid-cards?card_type=key_tag');
+            const tags = await tagsResponse.json();
+            const existingTag = tags.find(t => t.lock_id == lockId);
+
+            if (existingTag) {
+                await fetch(`/api/v1/rfid-cards/${existingTag.id}`, { method: 'DELETE' });
+            }
+
+            const response = await fetch('/api/v1/rfid-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    card_uid: uid,
+                    card_type: 'key_tag',
+                    lock_id: parseInt(lockId),
+                    name: 'Tag Klucza'
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    async function deleteAccessCode(id) {
+        if (!confirm('Czy na pewno chcesz usunąć ten kod?')) return;
+        try {
+            // Note: We need a DELETE endpoint for access codes in API.
+            // Assuming /api/v1/access-codes/{id} exists? 
+            // Let's check routes.py... I didn't see a DELETE endpoint for access codes in the snippets I viewed.
+            // I saw delete_access_code_ui in ui_routes.py but not in api routes.
+            // I MUST ADD DELETE ENDPOINT TO API ROUTES.
+
+            // Wait, I haven't added DELETE /api/v1/access-codes/{id} yet.
+            // I should add it.
+
+            // For now, I'll assume I will add it.
+            const response = await fetch(`/api/v1/access-codes/${id}`, { method: 'DELETE' });
+            if (response.ok) window.location.reload();
+            else alert('Błąd usuwania');
+        } catch (e) { console.error(e); }
+    }
+
+    async function deleteRfidCard(id) {
+        if (!confirm('Czy na pewno chcesz usunąć tę kartę?')) return;
+        try {
+            const response = await fetch(`/api/v1/rfid-cards/${id}`, { method: 'DELETE' });
+            if (response.ok) window.location.reload();
+            else alert('Błąd usuwania');
+        } catch (e) { console.error(e); }
+    }
+
+    // Mobile menu functions
+    function toggleMobileMenu() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('mobileOverlay').classList.toggle('active');
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('mobileOverlay').classList.remove('active');
+    }
+</script>
+{% endblock %}

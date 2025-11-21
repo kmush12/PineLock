@@ -32,7 +32,7 @@ class AccessCode(Base):
     __tablename__ = "access_codes"
     
     id = Column(Integer, primary_key=True, index=True)
-    lock_id = Column(Integer, ForeignKey("locks.id"), nullable=False)
+    lock_id = Column(Integer, ForeignKey("locks.id"), nullable=True)  # Nullable for Master PINs
     code = Column(String, nullable=False)
     name = Column(String)
     is_active = Column(Boolean, default=True)
@@ -49,9 +49,10 @@ class RFIDCard(Base):
     __tablename__ = "rfid_cards"
     
     id = Column(Integer, primary_key=True, index=True)
-    lock_id = Column(Integer, ForeignKey("locks.id"), nullable=False)
+    lock_id = Column(Integer, ForeignKey("locks.id"), nullable=True)  # Nullable for Master Cards
     card_uid = Column(String, nullable=False, index=True)
     name = Column(String)
+    card_type = Column(String, default="access")  # 'master', 'key_tag', 'access'
     is_active = Column(Boolean, default=True)
     valid_from = Column(DateTime, nullable=True)
     valid_until = Column(DateTime, nullable=True)

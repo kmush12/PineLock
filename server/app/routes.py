@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from app.database import get_session
@@ -16,6 +16,7 @@ from app.schemas import (
     AccessLogResponse, LockCommand
 )
 from app.mqtt_client import mqtt_client
+from app.services import sync_device
 
 router = APIRouter()
 
@@ -117,6 +118,25 @@ async def send_lock_command(
 
 
 # Access Code Endpoints
+@router.get("/access-codes", response_model=List[AccessCodeResponse])
+async def list_all_access_codes(
+    lock_id: Optional[int] = None,
+    master: bool = False,
+    session: AsyncSession = Depends(get_session)
+):
+    """Get all access codes, optionally filtered by lock_id or master status."""
+    query = select(AccessCode)
+    
+    if master:
+        query = query.where(AccessCode.lock_id.is_(None))
+    elif lock_id is not None:
+        query = query.where(AccessCode.lock_id == lock_id)
+        
+    result = await session.execute(query)
+    codes = result.scalars().all()
+    return codes
+
+
 @router.get("/locks/{lock_id}/access-codes", response_model=List[AccessCodeResponse])
 async def list_access_codes(lock_id: int, session: AsyncSession = Depends(get_session)):
     """Get all access codes for a lock."""
@@ -133,21 +153,89 @@ async def create_access_code(
     session: AsyncSession = Depends(get_session)
 ):
     """Create a new access code."""
-    # Verify lock exists
-    result = await session.execute(select(Lock).where(Lock.id == access_code.lock_id))
-    lock = result.scalar_one_or_none()
-    if not lock:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lock not found")
+    # Check for existing Master PIN (only 1 allowed)
+    if access_code.lock_id is None:
+        result = await session.execute(
+            select(AccessCode).where(AccessCode.lock_id == None)
+        )
+        existing_master = result.scalar_one_or_none()
+        if existing_master:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Master PIN already exists. Only one Master PIN is allowed. Please delete the existing one first."
+            )
+    
+    # Verify lock exists if lock_id is provided
+    if access_code.lock_id is not None:
+        result = await session.execute(select(Lock).where(Lock.id == access_code.lock_id))
+        lock = result.scalar_one_or_none()
+        if not lock:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lock not found")
+        
+        # Check for existing PIN for this lock (only 1 allowed per lock)
+        result = await session.execute(
+            select(AccessCode).where(AccessCode.lock_id == access_code.lock_id)
+        )
+        existing_pin = result.scalar_one_or_none()
+        if existing_pin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"PIN already exists for this lock. Only one PIN per lock is allowed. Please delete the existing one first."
+            )
     
     db_code = AccessCode(**access_code.dict())
     session.add(db_code)
     await session.commit()
     await session.refresh(db_code)
     
-    # Request device to sync
-    mqtt_client.request_sync(lock.device_id)
+    # Trigger Sync
+    if access_code.lock_id is None:
+        # Sync ALL locks for Master PIN
+        result = await session.execute(select(Lock))
+        locks = result.scalars().all()
+        for lock in locks:
+            await sync_device(lock.device_id)
+    else:
+        # Sync specific lock
+        result = await session.execute(select(Lock).where(Lock.id == access_code.lock_id))
+        lock = result.scalar_one_or_none()
+        if lock:
+            await sync_device(lock.device_id)
     
     return db_code
+
+
+@router.delete("/access-codes/{code_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_access_code(
+    code_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Delete an access code."""
+    result = await session.execute(select(AccessCode).where(AccessCode.id == code_id))
+    access_code = result.scalar_one_or_none()
+    
+    if not access_code:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access code not found")
+    
+    lock_id = access_code.lock_id
+    await session.delete(access_code)
+    await session.commit()
+    
+    # Trigger Sync
+    if lock_id is None:
+        # Sync ALL locks if it was a Master PIN
+        result = await session.execute(select(Lock))
+        locks = result.scalars().all()
+        for lock in locks:
+            await sync_device(lock.device_id)
+    else:
+        # Sync specific lock
+        result = await session.execute(select(Lock).where(Lock.id == lock_id))
+        lock = result.scalar_one_or_none()
+        if lock:
+            await sync_device(lock.device_id)
+    
+    return None
 
 
 @router.put("/access-codes/{code_id}", response_model=AccessCodeResponse)
@@ -200,6 +288,19 @@ async def delete_access_code(code_id: int, session: AsyncSession = Depends(get_s
 
 
 # RFID Card Endpoints
+@router.get("/rfid-cards", response_model=List[RFIDCardResponse])
+async def list_all_rfid_cards(
+    card_type: Optional[str] = None,
+    session: AsyncSession = Depends(get_session)
+):
+    """Get all RFID cards, optionally filtered by type."""
+    query = select(RFIDCard)
+    if card_type:
+        query = query.where(RFIDCard.card_type == card_type)
+    
+    result = await session.execute(query)
+    cards = result.scalars().all()
+    return cards
 @router.get("/locks/{lock_id}/rfid-cards", response_model=List[RFIDCardResponse])
 async def list_rfid_cards(lock_id: int, session: AsyncSession = Depends(get_session)):
     """Get all RFID cards for a lock."""
@@ -216,19 +317,72 @@ async def create_rfid_card(
     session: AsyncSession = Depends(get_session)
 ):
     """Create a new RFID card."""
-    # Verify lock exists
-    result = await session.execute(select(Lock).where(Lock.id == rfid_card.lock_id))
-    lock = result.scalar_one_or_none()
-    if not lock:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lock not found")
+    # Handle Master Cards (no lock_id required, only 1 allowed)
+    if rfid_card.card_type == 'master':
+        if rfid_card.lock_id is not None:
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Master cards cannot be assigned to a specific lock")
+        
+        # Check for existing Master RFID (only 1 allowed)
+        result = await session.execute(
+            select(RFIDCard).where(RFIDCard.card_type == 'master')
+        )
+        existing_master = result.scalar_one_or_none()
+        if existing_master:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Master RFID already exists. Only one Master RFID is allowed. Please delete the existing one first."
+            )
+    
+    # Handle Key Tags (for key presence detection only)
+    elif rfid_card.card_type == 'key_tag':
+        if rfid_card.lock_id is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lock ID is required for key tags")
+            
+        # Verify lock exists
+        result = await session.execute(select(Lock).where(Lock.id == rfid_card.lock_id))
+        lock = result.scalar_one_or_none()
+        if not lock:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lock not found")
+        
+        # Check for existing Key Tag for this lock (only 1 allowed per lock)
+        result = await session.execute(
+            select(RFIDCard).where(
+                RFIDCard.lock_id == rfid_card.lock_id,
+                RFIDCard.card_type == 'key_tag'
+            )
+        )
+        existing_tag = result.scalar_one_or_none()
+        if existing_tag:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Key Tag already exists for this lock. Only one Key Tag per lock is allowed. Please delete the existing one first."
+            )
+    
+    # Reject 'access' card type (not in new model)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid card type. Only 'master' and 'key_tag' are allowed."
+        )
     
     db_card = RFIDCard(**rfid_card.dict())
     session.add(db_card)
     await session.commit()
     await session.refresh(db_card)
     
-    # Request device to sync
-    mqtt_client.request_sync(lock.device_id)
+    # Trigger Sync
+    if rfid_card.card_type == 'master':
+        # Sync ALL locks for master card
+        result = await session.execute(select(Lock))
+        locks = result.scalars().all()
+        for lock in locks:
+            await sync_device(lock.device_id)
+    elif rfid_card.lock_id:
+        # Sync specific lock
+        result = await session.execute(select(Lock).where(Lock.id == rfid_card.lock_id))
+        lock = result.scalar_one_or_none()
+        if lock:
+            await sync_device(lock.device_id)
     
     return db_card
 

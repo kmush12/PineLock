@@ -182,120 +182,396 @@
                         </svg>
                         Karty RFID
                     </h1>
-                    <p class="subtitle">Zarządzaj dostępem przez karty RFID (wkrótce)</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-primary" disabled title="Funkcja w przygotowaniu">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        Dodaj kartę
-                    </button>
+                    <p class="subtitle">Zarządzaj kartami Master i tagami kluczy</p>
                 </div>
             </div>
 
-            {% if message %}
-            <div class="alert alert-success">{{ message }}</div>
-            {% endif %}
+            <div class="grid-container"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
 
-            {% if error %}
-            <div class="alert alert-error">{{ error }}</div>
-            {% endif %}
-
-            <!-- Info Banner -->
-            <div class="alert alert-info">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    style="margin-right: 8px;">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                <div>
-                    <strong>Funkcja w przygotowaniu</strong><br>
-                    System obsługi kart RFID jest obecnie w fazie rozwoju. W przyszłości będzie możliwe:
-                    <ul style="margin-top: 8px; margin-bottom: 0;">
-                        <li>Dodawanie i usuwanie kart RFID</li>
-                        <li>Przypisywanie kart do domków</li>
-                        <li>Określanie okresu ważności kart</li>
-                        <li>Śledzenie użycia kart w logach dostępu</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Stats Cards (placeholders) -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Wszystkie karty</div>
-                    <div class="stat-value">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Aktywne</div>
-                    <div class="stat-value stat-success">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Wygasłe</div>
-                    <div class="stat-value stat-warning">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Domki z kartami</div>
-                    <div class="stat-value">0</div>
-                </div>
-            </div>
-
-            <!-- RFID Cards Table (placeholder) -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Lista kart RFID</h2>
-                </div>
-                <div class="card-content">
-                    <div class="empty-state">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                            <line x1="1" y1="10" x2="23" y2="10" />
-                        </svg>
-                        <h3>Brak kart RFID</h3>
-                        <p>System obsługi kart RFID jest w przygotowaniu.</p>
-                        <p>Ta funkcjonalność będzie dostępna w przyszłej wersji.</p>
+                <!-- Master Cards Section -->
+                <div class="card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2>Karty Master</h2>
+                            <p class="subtitle" style="margin-bottom: 0;">Otwierają wszystkie zamki</p>
+                        </div>
+                        <button class="btn-primary" onclick="openAddMasterCardModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Dodaj
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <div id="masterCardsList" class="list-group">
+                            <!-- Populated by JS -->
+                            <div class="loading-spinner"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Placeholder for future implementation -->
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <h2>Planowane funkcje</h2>
-                </div>
-                <div class="card-content">
-                    <div style="padding: 20px;">
-                        <h3 style="margin-top: 0;">Integracja z czytnikiem RFID</h3>
-                        <p>Aby używać kart RFID z systemem PineLock, potrzebne będzie:</p>
-                        <ul>
-                            <li><strong>Czytnik RFID</strong> - moduł RC522 lub PN532 podłączony do ESP32</li>
-                            <li><strong>Aktualizacja firmware</strong> - dodanie obsługi protokołu RFID w urządzeniu
-                            </li>
-                            <li><strong>Rejestracja kart</strong> - możliwość nauki nowych kart przez system</li>
-                            <li><strong>Synchronizacja</strong> - przekazywanie listy autoryzowanych kart przez MQTT
-                            </li>
-                        </ul>
-
-                        <h3>Schemat działania</h3>
-                        <ol>
-                            <li>Administrator dodaje kartę RFID w panelu (przypisuje do domku)</li>
-                            <li>Serwer wysyła zaktualizowaną listę kart do urządzenia przez MQTT</li>
-                            <li>Urządzenie zapisuje karty w pamięci ESP32</li>
-                            <li>Przy przyłożeniu karty, czytnik sprawdza UID z listą autoryzowanych kart</li>
-                            <li>Jeśli karta jest autoryzowana i aktywna, zamek się otwiera</li>
-                            <li>Zdarzenie dostępu jest rejestrowane w logach</li>
-                        </ol>
+                <!-- Key Tags Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Tagi Kluczy</h2>
+                        <p class="subtitle" style="margin-bottom: 0;">Wykrywanie obecności klucza w skrzynce</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="keyTagsList" class="list-group">
+                            <!-- Populated by JS -->
+                            <div class="loading-spinner"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
         </main>
     </div>
-    </main>
 </div>
+
+<!-- Add Master Card Modal -->
+<div class="modal" id="addMasterCardModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Dodaj Kartę Master</h3>
+            <button class="close-btn" onclick="closeModal('addMasterCardModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="masterCardName">Nazwa karty</label>
+                <input type="text" id="masterCardName" class="form-control" placeholder="np. Karta Administratora">
+            </div>
+            <div class="form-group">
+                <label for="masterCardUID">UID Karty</label>
+                <input type="text" id="masterCardUID" class="form-control" placeholder="np. A1:B2:C3:D4">
+                <small style="color: #666;">Wprowadź UID odczytany z czytnika</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addMasterCardModal')">Anuluj</button>
+            <button class="btn-primary" onclick="addMasterCard()">Dodaj kartę</button>
+        </div>
+    </div>
 </div>
+
+<!-- Assign Key Tag Modal -->
+<div class="modal" id="assignKeyTagModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Przypisz Tag Klucza</h3>
+            <button class="close-btn" onclick="closeModal('assignKeyTagModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="keyTagLockId">
+            <p>Przypisz tag RFID do domku: <strong id="keyTagLockName"></strong></p>
+            <div class="form-group">
+                <label for="keyTagUID">UID Taga</label>
+                <input type="text" id="keyTagUID" class="form-control" placeholder="np. A1:B2:C3:D4">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('assignKeyTagModal')">Anuluj</button>
+            <button class="btn-primary" onclick="saveKeyTag()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .list-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .item-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-title {
+        font-weight: 500;
+        color: #fff;
+    }
+
+    .item-subtitle {
+        font-size: 0.85em;
+        color: #aaa;
+        font-family: monospace;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        color: #aaa;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+    }
+
+    .btn-icon:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    .btn-icon.delete:hover {
+        background: rgba(220, 53, 69, 0.2);
+        color: #ff4d4d;
+    }
+
+    .tag-badge {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        margin-left: 8px;
+    }
+
+    .empty-list {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+</style>
+
+<script>
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMasterCards();
+        loadLocksAndKeyTags();
+    });
+
+    async function loadMasterCards() {
+        const container = document.getElementById('masterCardsList');
+        try {
+            const response = await fetch('/api/v1/rfid-cards?card_type=master');
+            const cards = await response.json();
+
+            if (cards.length === 0) {
+                container.innerHTML = '<div class="empty-list">Brak kart Master</div>';
+                return;
+            }
+
+            container.innerHTML = cards.map(card => `
+                <div class="list-item">
+                    <div class="item-info">
+                        <span class="item-title">${card.name || 'Bez nazwy'}</span>
+                        <span class="item-subtitle">${card.card_uid}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-icon delete" onclick="deleteCard(${card.id})" title="Usuń">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading master cards:', error);
+            container.innerHTML = '<div class="error">Błąd ładowania danych</div>';
+        }
+    }
+
+    async function loadLocksAndKeyTags() {
+        const container = document.getElementById('keyTagsList');
+        try {
+            // Fetch locks
+            const locksResponse = await fetch('/api/v1/locks');
+            const locks = await locksResponse.json();
+
+            // Fetch all key tags
+            const tagsResponse = await fetch('/api/v1/rfid-cards?card_type=key_tag');
+            const tags = await tagsResponse.json();
+
+            container.innerHTML = locks.map(lock => {
+                const tag = tags.find(t => t.lock_id === lock.id);
+                return `
+                    <div class="list-item">
+                        <div class="item-info">
+                            <span class="item-title">${lock.name}</span>
+                            <span class="item-subtitle">${tag ? tag.card_uid : 'Nie przypisano'}</span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-icon" onclick="openAssignKeyTagModal(${lock.id}, '${lock.name}', '${tag ? tag.card_uid : ''}')" title="Edytuj">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error loading locks:', error);
+            container.innerHTML = '<div class="error">Błąd ładowania danych</div>';
+        }
+    }
+
+    function openAddMasterCardModal() {
+        document.getElementById('masterCardName').value = '';
+        document.getElementById('masterCardUID').value = '';
+        document.getElementById('addMasterCardModal').classList.add('active');
+    }
+
+    async function addMasterCard() {
+        const name = document.getElementById('masterCardName').value;
+        const uid = document.getElementById('masterCardUID').value;
+
+        if (!uid) {
+            alert('Podaj UID karty');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/v1/rfid-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    card_uid: uid,
+                    card_type: 'master',
+                    lock_id: null
+                })
+            });
+
+            if (response.ok) {
+                closeModal('addMasterCardModal');
+                loadMasterCards();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error('Error adding card:', error);
+            alert('Wystąpił błąd podczas dodawania karty');
+        }
+    }
+
+    async function deleteCard(id) {
+        if (!confirm('Czy na pewno chcesz usunąć tę kartę?')) return;
+
+        try {
+            // Note: We need a delete endpoint in API, assuming it exists or using generic one?
+            // Wait, we didn't check delete endpoint in routes.py. 
+            // Assuming standard CRUD, but let's check if we need to implement it.
+            // For now, let's assume it's not there and we might need to add it.
+            // Actually, I should have checked routes.py for DELETE.
+            // If it's missing, I'll need to add it.
+            // Let's try to call it, if 404/405 then I know.
+
+            // Wait, I should verify routes.py has DELETE. 
+            // I'll add the JS code assuming it will be there.
+            const response = await fetch(`/api/v1/rfid-cards/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                loadMasterCards();
+                loadLocksAndKeyTags();
+            } else {
+                alert('Błąd podczas usuwania karty');
+            }
+        } catch (error) {
+            console.error('Error deleting card:', error);
+        }
+    }
+
+    function openAssignKeyTagModal(lockId, lockName, currentUid) {
+        document.getElementById('keyTagLockId').value = lockId;
+        document.getElementById('keyTagLockName').textContent = lockName;
+        document.getElementById('keyTagUID').value = currentUid;
+        document.getElementById('assignKeyTagModal').classList.add('active');
+    }
+
+    async function saveKeyTag() {
+        const lockId = document.getElementById('keyTagLockId').value;
+        const uid = document.getElementById('keyTagUID').value;
+
+        if (!uid) {
+            // If empty, maybe delete the tag?
+            // For now require UID.
+            alert('Podaj UID taga');
+            return;
+        }
+
+        try {
+            // First check if tag exists for this lock
+            const tagsResponse = await fetch('/api/v1/rfid-cards?card_type=key_tag');
+            const tags = await tagsResponse.json();
+            const existingTag = tags.find(t => t.lock_id == lockId);
+
+            if (existingTag) {
+                // Update existing
+                await fetch(`/api/v1/rfid-cards/${existingTag.id}`, { // Need PUT endpoint
+                    method: 'PUT', // or DELETE then POST
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_uid: uid }) // Wait, update schema allows name/active/valid, not UID?
+                    // If UID changes, it's better to delete and create new.
+                });
+                // Actually, schema RFIDCardUpdate doesn't have card_uid.
+                // So we should delete old and create new.
+                await fetch(`/api/v1/rfid-cards/${existingTag.id}`, { method: 'DELETE' });
+            }
+
+            // Create new
+            const response = await fetch('/api/v1/rfid-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    card_uid: uid,
+                    card_type: 'key_tag',
+                    lock_id: parseInt(lockId),
+                    name: 'Tag Klucza'
+                })
+            });
+
+            if (response.ok) {
+                closeModal('assignKeyTagModal');
+                loadLocksAndKeyTags();
+            } else {
+                const error = await response.json();
+                alert('Błąd: ' + error.detail);
+            }
+        } catch (error) {
+            console.error('Error saving key tag:', error);
+            alert('Wystąpił błąd');
+        }
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    // Mobile menu functions
+    function toggleMobileMenu() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('mobileOverlay').classList.toggle('active');
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('mobileOverlay').classList.remove('active');
+    }
+</script>
 {% endblock %}

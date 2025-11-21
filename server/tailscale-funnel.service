@@ -1,0 +1,16 @@
+[Unit]
+Description=Tailscale Funnel for PineLock UI
+After=network-online.target tailscaled.service pinelock.service
+Wants=network-online.target
+Requires=tailscaled.service pinelock.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/tailscale funnel --bg --https=443 --set-path=/ http://localhost:8000
+ExecStop=/usr/bin/tailscale funnel off
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

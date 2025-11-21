@@ -40,6 +40,44 @@ PY
 # Get local network IP addresses
 LOCAL_IPS=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -3)
 
+# Check and start Tailscale if not running
+if ! command -v tailscale &> /dev/null; then
+    echo "⚠️  Tailscale not installed. Installing..."
+    sudo snap install tailscale
+    echo "✅ Tailscale installed. Please authenticate with: sudo tailscale up"
+    exit 1
+fi
+
+if ! sudo tailscale status &> /dev/null; then
+    echo "🔗 Starting Tailscale..."
+    sudo tailscale up
+    echo "✅ Tailscale started"
+else
+    echo "✅ Tailscale is already running"
+fi
+
+# Configure Tailscale Funnel if not running
+if ! sudo tailscale funnel status &> /dev/null; then
+    echo "🔧 Starting Tailscale Funnel..."
+    sudo tailscale funnel --bg --https=443 --set-path=/ http://localhost:${API_PORT}
+    echo "✅ Tailscale Funnel started"
+else
+    echo "✅ Tailscale Funnel is already running"
+fi
+
+# Get Tailscale hostname for public access
+TAILSCALE_STATUS=$(sudo tailscale status --json 2>&1)
+if echo "$TAILSCALE_STATUS" | grep -q '"HostName"'; then
+    TAILSCALE_HOSTNAME=$(echo "$TAILSCALE_STATUS" | grep -o '"HostName":"[^"]*"' | cut -d'"' -f4)
+    if [ -n "$TAILSCALE_HOSTNAME" ]; then
+        echo "🌐 Tailscale public access:"
+        echo "   https://$TAILSCALE_HOSTNAME"
+        echo ""
+    fi
+else
+    echo "⚠️  Tailscale not connected or status failed. Run 'sudo tailscale up' to authenticate."
+fi
+
 # Start server
 echo ""
 echo "╔════════════════════════════════════════════════════════════════╗"

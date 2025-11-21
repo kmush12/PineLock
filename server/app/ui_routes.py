@@ -83,13 +83,28 @@ async def locks_list(request: Request, session: AsyncSession = Depends(get_sessi
     # Get all locks
     result = await session.execute(select(Lock))
     locks = result.scalars().all()
-    
+    locks_json = []
+    for lock in locks:
+        lock_dict = {}
+        for k, v in lock.__dict__.items():
+            if not k.startswith('_'):
+                if isinstance(v, datetime):
+                    lock_dict[k] = v.strftime("%d.%m.%Y %H:%M")
+                else:
+                    lock_dict[k] = v
+        locks_json.append(lock_dict)
+
     # Calculate stats
     total_locks = len(locks)
     locked_count = sum(1 for lock in locks if lock.is_locked)
     unlocked_count = sum(1 for lock in locks if not lock.is_locked and lock.is_online)
     offline_count = sum(1 for lock in locks if not lock.is_online)
-    
+
+    # Check for messages
+    message = None
+    if request.query_params.get("deleted") == "1":
+        message = "✅ Domek został usunięty"
+
     recent_logs = []
     
     return templates.TemplateResponse(
@@ -98,11 +113,12 @@ async def locks_list(request: Request, session: AsyncSession = Depends(get_sessi
             "request": request,
             "username": username,
             "user_initial": user_initial,
-            "locks": locks,
+            "locks": locks_json,
             "total_locks": total_locks,
             "locked_count": locked_count,
             "unlocked_count": unlocked_count,
             "offline_count": offline_count,
+            "message": message,
             "recent_logs": recent_logs,
             "active_page": "domki",
             "message": request.query_params.get("message"),
@@ -338,110 +354,67 @@ async def update_access_code_ui(
     )
 
 
-@router.get("/access-codes", response_class=HTMLResponse)
-async def access_codes_list(request: Request, session: AsyncSession = Depends(get_session)):
+@router.get("/access", response_class=HTMLResponse)
+async def access_management(request: Request, session: AsyncSession = Depends(get_session)):
     if not _is_authenticated(request):
         return _login_redirect()
     
-    # Get filter parameters
-    filter_lock_id = request.query_params.get("lock_id")
-    filter_status = request.query_params.get("status")
+    from app.models import RFIDCard
     
-    # Base query
-    query = select(AccessCode).join(Lock)
+    # Fetch Master PIN (only 1 should exist)
+    master_pin_result = await session.execute(select(AccessCode).where(AccessCode.lock_id.is_(None)))
+    master_pin = master_pin_result.scalar_one_or_none()
     
-    # Apply filters
-    if filter_lock_id:
-        query = query.where(AccessCode.lock_id == int(filter_lock_id))
-    if filter_status == "active":
-        query = query.where(AccessCode.is_active == True)
-    elif filter_status == "inactive":
-        query = query.where(AccessCode.is_active == False)
+    # Fetch Master RFID (only 1 should exist)
+    master_rfid_result = await session.execute(select(RFIDCard).where(RFIDCard.card_type == 'master'))
+    master_rfid = master_rfid_result.scalar_one_or_none()
     
-    query = query.order_by(AccessCode.created_at.desc())
-    
-    codes_result = await session.execute(query)
-    codes = codes_result.scalars().all()
-    
-    # Get all locks for filter dropdown
+    # Fetch Locks with their PIN and Key Tag
     locks_result = await session.execute(select(Lock).order_by(Lock.name))
-    all_locks = locks_result.scalars().all()
+    locks = locks_result.scalars().all()
     
-    # Calculate stats
-    total_codes = len(codes)
-    active_codes = sum(1 for c in codes if c.is_active)
-    inactive_codes = total_codes - active_codes
-    locks_with_codes = len(set(c.lock_id for c in codes))
+    # Fetch all non-master PINs
+    pins_result = await session.execute(select(AccessCode).where(AccessCode.lock_id.is_not(None)))
+    all_pins = pins_result.scalars().all()
     
+    # Fetch all Key Tags
+    key_tags_result = await session.execute(select(RFIDCard).where(RFIDCard.card_type == 'key_tag'))
+    all_key_tags = key_tags_result.scalars().all()
+    
+    # Group by lock (single PIN + single Key Tag per lock)
+    locks_data = []
+    for lock in locks:
+        lock_pin = next((p for p in all_pins if p.lock_id == lock.id), None)
+        key_tag = next((r for r in all_key_tags if r.lock_id == lock.id), None)
+        
+        locks_data.append({
+            "lock": lock,
+            "pin": lock_pin,  # Single PIN or None
+            "key_tag": key_tag  # Single Key Tag or None
+        })
+        
     return templates.TemplateResponse(
-        "access_codes.html",
+        "access_management.html",
         {
             "request": request,
             **_get_user_context(request),
-            "codes": codes,
-            "all_locks": all_locks,
-            "total_codes": total_codes,
-            "active_codes": active_codes,
-            "inactive_codes": inactive_codes,
-            "locks_with_codes": locks_with_codes,
-            "filter_lock_id": int(filter_lock_id) if filter_lock_id else None,
-            "filter_status": filter_status,
-            "active_page": "access-codes",
+            "active_page": "access",
+            "master_pin": master_pin,  # Single or None
+            "master_rfid": master_rfid,  # Single or None
+            "locks_data": locks_data,
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")
         }
     )
 
+# Redirect old routes
+@router.get("/access-codes")
+async def access_codes_redirect():
+    return RedirectResponse(url="/ui/access", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
-@router.post("/access-codes/{code_id}/delete")
-async def delete_access_code_ui(
-    code_id: int,
-    request: Request,
-    session: AsyncSession = Depends(get_session)
-):
-    if not _is_authenticated(request):
-        return _login_redirect()
-    
-    code_result = await session.execute(select(AccessCode).where(AccessCode.id == code_id))
-    access_code = code_result.scalar_one_or_none()
-    
-    if not access_code:
-        return RedirectResponse(
-            url="/ui/access-codes?error=not_found",
-            status_code=status.HTTP_303_SEE_OTHER
-        )
-    
-    lock_id = access_code.lock_id
-    await session.delete(access_code)
-    await session.commit()
-    
-    # Request sync with device
-    lock_result = await session.execute(select(Lock).where(Lock.id == lock_id))
-    lock = lock_result.scalar_one_or_none()
-    if lock:
-        mqtt_client.request_sync(lock.device_id)
-    
-    return RedirectResponse(
-        url="/ui/access-codes?message=code_deleted",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
-
-
-@router.get("/rfid-cards", response_class=HTMLResponse)
-async def rfid_cards_list(request: Request, session: AsyncSession = Depends(get_session)):
-    if not _is_authenticated(request):
-        return _login_redirect()
-    
-    return templates.TemplateResponse(
-        "rfid_cards.html",
-        {
-            "request": request,
-            **_get_user_context(request),
-            "active_page": "rfid-cards",
-            "message": request.query_params.get("message"),
-            "error": request.query_params.get("error")
-        }
-    )
+@router.get("/rfid-cards")
+async def rfid_cards_redirect():
+    return RedirectResponse(url="/ui/access", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
 @router.get("/access-logs", response_class=HTMLResponse)

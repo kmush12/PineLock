@@ -100,11 +100,23 @@ async def handle_heartbeat(device_id: str, data: dict):
         logger.error(f"Error handling heartbeat: {e}")
 
 
+from app.services import sync_device
+
+async def handle_sync_request(device_id: str, data: dict):
+    """Handle sync request from device."""
+    try:
+        logger.info(f"Received sync request from {device_id}")
+        await sync_device(device_id)
+    except Exception as e:
+        logger.error(f"Error handling sync request: {e}")
+
+
 def setup_mqtt_handlers(mqtt_client):
     """Register MQTT message handlers."""
     mqtt_client.register_handler("status", handle_status_update)
     mqtt_client.register_handler("access", handle_access_event)
     mqtt_client.register_handler("heartbeat", handle_heartbeat)
+    mqtt_client.register_handler("sync", handle_sync_request)
 async def _track_pending_device(session, device_id: str):
     """Record or update pending domek entries."""
     clean_device_id = device_id.strip()

@@ -43,7 +43,7 @@ class AccessCodeBase(BaseModel):
 
 
 class AccessCodeCreate(AccessCodeBase):
-    lock_id: int
+    lock_id: Optional[int] = None
 
 
 class AccessCodeUpdate(BaseModel):
@@ -56,7 +56,7 @@ class AccessCodeUpdate(BaseModel):
 
 class AccessCodeResponse(AccessCodeBase):
     id: int
-    lock_id: int
+    lock_id: Optional[int]
     created_at: datetime
     
     class Config:
@@ -67,17 +67,19 @@ class AccessCodeResponse(AccessCodeBase):
 class RFIDCardBase(BaseModel):
     card_uid: str
     name: Optional[str] = None
+    card_type: str = "access"  # 'master', 'key_tag', 'access'
     is_active: bool = True
     valid_from: Optional[datetime] = None
     valid_until: Optional[datetime] = None
 
 
 class RFIDCardCreate(RFIDCardBase):
-    lock_id: int
+    lock_id: Optional[int] = None  # Optional for Master Cards
 
 
 class RFIDCardUpdate(BaseModel):
     name: Optional[str] = None
+    card_uid: Optional[str] = None
     is_active: Optional[bool] = None
     valid_from: Optional[datetime] = None
     valid_until: Optional[datetime] = None
@@ -85,7 +87,7 @@ class RFIDCardUpdate(BaseModel):
 
 class RFIDCardResponse(RFIDCardBase):
     id: int
-    lock_id: int
+    lock_id: Optional[int]
     created_at: datetime
     
     class Config:
