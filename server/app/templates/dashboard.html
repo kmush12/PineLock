@@ -140,9 +140,7 @@
                 {% for lock in locks %}
                 <div class="lock-card">
                     <div class="lock-card-header">
-                        <div class="lock-icon {{ 'locked' if lock.is_locked else 'unlocked' }}">
-                            {{ '🔒' if lock.is_locked else '🔓' }}
-                        </div>
+                        <img src="{{ url_for('static', path='/home.svg') }}" alt="Dom" class="lock-icon-img">
                         <span
                             class="lock-status-badge {{ 'status-locked' if lock.is_locked else 'status-unlocked' if lock.is_online else 'status-offline' }}">
                             {{ 'Zajęty' if lock.is_locked else 'Wolny' if lock.is_online else 'Offline' }}
@@ -409,14 +407,10 @@
                 filteredLocks.forEach(lock => {
                     const statusText = lock.is_locked ? 'Zajęty' : (lock.is_online ? 'Wolny' : 'Offline');
                     const statusClass = lock.is_locked ? 'status-locked' : (lock.is_online ? 'status-unlocked' : 'status-offline');
-                    const icon = lock.is_locked ? '🔒' : (lock.is_online ? '🔓' : '⚠️');
-
                     html += `
                     <div class="lock-card">
                         <div class="lock-card-header">
-                            <div class="lock-icon ${lock.is_locked ? 'locked' : 'unlocked'}">
-                                ${icon}
-                            </div>
+                            <img src="/static/home.svg" alt="Dom" class="lock-icon-img">
                             <span class="lock-status-badge ${statusClass}">
                                 ${statusText}
                             </span>

@@ -290,18 +290,19 @@
         </div>
         <div class="modal-body">
             <input type="hidden" id="pinLockId">
-            <div class="form-group">
-                <label>Nazwa</label>
-                <input type="text" id="pinName" class="form-control" placeholder="np. Goście">
-            </div>
+            <div id="addPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
             <div class="form-group">
                 <label>Kod PIN</label>
                 <input type="text" id="pinCode" class="form-control" placeholder="1234">
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal('addPinModal')">Anuluj</button>
-            <button class="btn-primary" onclick="saveLockPin()">Zapisz</button>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('addPinModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="saveLockPin()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -324,9 +325,13 @@
                 <input type="text" id="rfidUID" class="form-control" placeholder="A1:B2:C3:D4">
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal('addRfidModal')">Anuluj</button>
-            <button class="btn-primary" onclick="saveLockRfid()">Zapisz</button>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('addRfidModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="saveLockRfid()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -347,9 +352,13 @@
                 <input type="text" id="keyTagUID" class="form-control" placeholder="A1:B2:C3:D4">
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal('assignKeyTagModal')">Anuluj</button>
-            <button class="btn-primary" onclick="saveKeyTag()">Zapisz</button>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+            <button
+                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="closeModal('assignKeyTagModal')">Anuluj</button>
+            <button
+                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                onclick="saveKeyTag()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -363,6 +372,7 @@
         </div>
         <div class="modal-body">
             <input type="hidden" id="editMasterPinId">
+            <div id="editMasterPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
             <div class="form-group">
                 <label>Kod PIN (4-10 cyfr)</label>
                 <input type="text" id="editMasterPinCode" class="form-control" placeholder="1234">
@@ -414,6 +424,7 @@
         <div class="modal-body">
             <input type="hidden" id="editPinId">
             <input type="hidden" id="editPinLockId">
+            <div id="editPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
             <div class="form-group">
                 <label>Kod PIN (4-10 cyfr)</label>
                 <input type="text" id="editPinCode" class="form-control" placeholder="1234">
@@ -534,8 +545,8 @@
     function openAddPinModal(lockId, lockName) {
         document.getElementById('pinLockId').value = lockId;
         document.getElementById('pinLockName').textContent = lockName;
-        document.getElementById('pinName').value = '';
         document.getElementById('pinCode').value = '';
+        document.getElementById('addPinError').style.display = 'none';
         document.getElementById('addPinModal').classList.add('active');
     }
 
@@ -558,6 +569,7 @@
     function openEditMasterPinModal(pinId, name, code) {
         document.getElementById('editMasterPinId').value = pinId;
         document.getElementById('editMasterPinCode').value = code || '';
+        document.getElementById('editMasterPinError').style.display = 'none';
         document.getElementById('editMasterPinModal').classList.add('active');
     }
 
@@ -572,6 +584,7 @@
         document.getElementById('editPinLockId').value = lockId;
         document.getElementById('editPinLockName').textContent = lockName;
         document.getElementById('editPinCode').value = code || '';
+        document.getElementById('editPinError').style.display = 'none';
         document.getElementById('editPinModal').classList.add('active');
     }
 
@@ -581,7 +594,17 @@
         const id = document.getElementById('editMasterPinId').value;
         const code = document.getElementById('editMasterPinCode').value;
 
-        if (!code) return alert('Podaj kod PIN');
+        document.getElementById('editMasterPinError').style.display = 'none';
+        if (!code) {
+            document.getElementById('editMasterPinError').textContent = 'Podaj kod PIN';
+            document.getElementById('editMasterPinError').style.display = 'block';
+            return;
+        }
+        if (!/^\d{4,10}$/.test(code)) {
+            document.getElementById('editMasterPinError').textContent = 'Kod PIN musi składać się z 4-10 cyfr';
+            document.getElementById('editMasterPinError').style.display = 'block';
+            return;
+        }
 
         try {
             const response = await fetch(`/api/v1/access-codes/${id}`, {
@@ -632,7 +655,17 @@
         const lockId = document.getElementById('editPinLockId').value;
         const code = document.getElementById('editPinCode').value;
 
-        if (!code) return alert('Podaj kod PIN');
+        document.getElementById('editPinError').style.display = 'none';
+        if (!code) {
+            document.getElementById('editPinError').textContent = 'Podaj kod PIN';
+            document.getElementById('editPinError').style.display = 'block';
+            return;
+        }
+        if (!/^\d{4,10}$/.test(code)) {
+            document.getElementById('editPinError').textContent = 'Kod PIN musi składać się z 4-10 cyfr';
+            document.getElementById('editPinError').style.display = 'block';
+            return;
+        }
 
         try {
             const response = await fetch(`/api/v1/access-codes/${id}`, {
@@ -712,10 +745,20 @@
 
     async function saveLockPin() {
         const lockId = document.getElementById('pinLockId').value;
-        const name = document.getElementById('pinName').value;
+        const name = '';
         const code = document.getElementById('pinCode').value;
 
-        if (!code) return alert('Podaj kod PIN');
+        document.getElementById('addPinError').style.display = 'none';
+        if (!code) {
+            document.getElementById('addPinError').textContent = 'Podaj kod PIN';
+            document.getElementById('addPinError').style.display = 'block';
+            return;
+        }
+        if (!/^\d{4,10}$/.test(code)) {
+            document.getElementById('addPinError').textContent = 'Kod PIN musi składać się z 4-10 cyfr';
+            document.getElementById('addPinError').style.display = 'block';
+            return;
+        }
 
         try {
             const response = await fetch('/api/v1/access-codes', {

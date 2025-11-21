@@ -6,20 +6,20 @@
     --forest-green: #1e5945;
     --dark-green: #2d6f51;
     --pine-green: #3a8660;
-    
+
     /* Accent Colors */
     --white: #ffffff;
     --cream: #f5f5dc;
     --light-gray: #e8e8e8;
     --medium-gray: #d0d0d0;
     --dark-gray: #4a4a4a;
-    
+
     /* Status Colors */
     --success: #28a745;
     --warning: #ffc107;
     --error: #dc3545;
     --info: #17a2b8;
-    
+
     /* UI Specific */
     --shadow: rgba(30, 89, 69, 0.15);
     --shadow-hover: rgba(30, 89, 69, 0.25);
@@ -604,8 +604,13 @@ body {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Responsive Design */
@@ -613,25 +618,25 @@ body {
     .dashboard-container {
         flex-direction: column;
     }
-    
+
     .sidebar {
         width: 100%;
     }
-    
+
     .main-content {
         padding: 20px;
     }
-    
+
     .locks-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .header {
         flex-direction: column;
         gap: 15px;
         text-align: center;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
     }

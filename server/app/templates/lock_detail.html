@@ -62,7 +62,7 @@
 
             <!-- Lock Status Card -->
             <div class="form-card">
-                <h2 class="form-title">Status urządzenia</h2>
+                <h2 class="form-title">Szczegóły</h2>
 
                 <div class="stats-grid" style="margin-bottom: 0;">
                     <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
@@ -102,11 +102,8 @@
 
             <!-- Access Methods -->
             <div class="form-card" style="margin-top: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="margin-bottom: 20px;">
                     <h2 class="form-title" style="margin-bottom: 0;">🔑 Metody dostępu</h2>
-                    <button class="btn btn-secondary btn-sm" onclick="showAddAccessModal()">
-                        ➕ Dodaj dostęp
-                    </button>
                 </div>
 
                 <div class="table-container">
@@ -127,7 +124,7 @@
                             <tr>
                                 <td>{{ '🔢 PIN' if access.type == 'pin' else '📇 RFID' }}</td>
                                 <td><code>{{ access.identifier }}</code></td>
-                                <td>{{ access.description }}</td>
+                                 <td>{% if access.type == 'pin' %}Kod PIN{% else %}Kod RFID{% endif %}</td>
                                 <td>{{ access.valid_from }}</td>
                                 <td>{{ access.valid_to or 'Bezterminowy' }}</td>
                                 <td>
@@ -137,21 +134,55 @@
                                     <span class="text-error">❌ Nieaktywny</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteAccess('{{ access.id }}')">
-                                        🗑️
-                                    </button>
-                                </td>
+                                 <td>
+                                     <button class="btn btn-secondary btn-sm" onclick="editAccess(this)" data-id="{{ access.id }}" data-type="{{ access.type }}" data-identifier="{{ access.identifier }}" data-description="{{ access.description }}">
+                                         Edytuj
+                                     </button>
+                                 </td>
                             </tr>
                             {% endfor %}
 
-                            {% if not access_methods %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
-                                    Brak zdefiniowanych metod dostępu
-                                </td>
-                            </tr>
-                            {% endif %}
+                             {% if not access_methods %}
+                             <tr>
+                                 <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
+                                     Brak zdefiniowanych metod dostępu
+                                 </td>
+                             </tr>
+                             {% endif %}
+
+                             {% if not has_pin %}
+                             <!-- Add PIN Row -->
+                             <tr id="addPinRow">
+                                 <td>🔢 PIN</td>
+                                 <td>nie ustalono</td>
+                                 <td>Kod PIN</td>
+                                 <td>-</td>
+                                 <td>-</td>
+                                 <td><span class="text-error">❌ Nieaktywny</span></td>
+                                 <td>
+                                     <button class="btn btn-secondary btn-sm" onclick="showAddPinModal()">
+                                         + Dodaj
+                                     </button>
+                                 </td>
+                             </tr>
+                             {% endif %}
+
+                             {% if not has_rfid %}
+                             <!-- Add RFID Row -->
+                             <tr id="addRfidRow">
+                                 <td>📇 RFID</td>
+                                 <td>nie ustalono</td>
+                                 <td>Kod RFID</td>
+                                 <td>-</td>
+                                 <td>-</td>
+                                 <td><span class="text-error">❌ Nieaktywny</span></td>
+                                 <td>
+                                     <button class="btn btn-secondary btn-sm" onclick="showAddRfidModal()">
+                                         + Dodaj
+                                     </button>
+                                 </td>
+                             </tr>
+                             {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -245,19 +276,9 @@
             }
         }
 
-        function showAddAccessModal() {
-            // TODO: Implement modal for adding access methods
-            alert('Funkcja w przygotowaniu - użyj API do dodania metod dostępu');
-        }
 
-        async function deleteAccess(accessId) {
-            if (!confirm('Czy na pewno chcesz usunąć tę metodę dostępu?')) {
-                return;
-            }
 
-            // TODO: Implement access method deletion
-            alert('Funkcja w przygotowaniu');
-        }
+
 
         async function deleteLock() {
             showDeleteModal();
@@ -278,6 +299,174 @@
             } catch (error) {
                 alert('❌ Błąd połączenia: ' + error.message);
             }
+        }
+
+
+
+        function showAddPinModal() {
+            document.getElementById('pinCode').value = '';
+            document.getElementById('addPinError').style.display = 'none';
+            document.getElementById('addPinModal').classList.add('active');
+            console.log('Modal addPinModal opened');
+        }
+
+        function showAddRfidModal() {
+            document.getElementById('rfidUID').value = '';
+            document.getElementById('addRfidModal').classList.add('active');
+            console.log('Modal addRfidModal opened');
+        }
+
+        async function saveLockPin() {
+            const code = document.getElementById('pinCode').value;
+
+            document.getElementById('addPinError').style.display = 'none';
+            if (!code) {
+                document.getElementById('addPinError').textContent = 'Podaj kod PIN';
+                document.getElementById('addPinError').style.display = 'block';
+                return;
+            }
+            if (!/^\d{4,10}$/.test(code)) {
+                document.getElementById('addPinError').textContent = 'Kod PIN musi składać się z 4-10 cyfr';
+                document.getElementById('addPinError').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/access-codes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: '',
+                        code: code,
+                        lock_id: {{ lock.id }}
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    document.getElementById('addPinError').textContent = 'Błąd: ' + (error.detail || 'Nie udało się dodać PIN');
+                    document.getElementById('addPinError').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('addPinError').textContent = 'Błąd połączenia: ' + error.message;
+                document.getElementById('addPinError').style.display = 'block';
+            }
+        }
+
+        async function saveLockRfid() {
+            const name = 'Karta RFID';
+            const uid = document.getElementById('rfidUID').value;
+
+            if (!uid) {
+                alert('Podaj UID karty');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/access-codes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        card_uid: uid,
+                        lock_id: {{ lock.id }}
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Błąd: ' + (error.detail || 'Nie udało się dodać RFID'));
+                }
+            } catch (error) {
+                alert('Błąd połączenia: ' + error.message);
+            }
+        }
+
+        function editAccess(button) {
+            const id = button.dataset.id;
+            const type = button.dataset.type;
+            const identifier = button.dataset.identifier;
+            const description = button.dataset.description;
+
+            document.getElementById('editAccessId').value = id;
+            document.getElementById('editAccessType').value = type;
+            document.getElementById('editAccessError').style.display = 'none';
+
+            if (type === 'pin') {
+                document.getElementById('editCodeGroup').style.display = 'block';
+                document.getElementById('editUidGroup').style.display = 'none';
+                document.getElementById('editNameGroup').style.display = 'none';
+                document.getElementById('editAccessCode').value = identifier || '';
+            } else if (type === 'rfid') {
+                document.getElementById('editCodeGroup').style.display = 'none';
+                document.getElementById('editUidGroup').style.display = 'block';
+                document.getElementById('editNameGroup').style.display = 'block';
+                document.getElementById('editAccessUid').value = identifier || '';
+                document.getElementById('editAccessName').value = description || '';
+            }
+
+            document.getElementById('editAccessModal').classList.add('active');
+        }
+
+        async function updateAccess() {
+            const id = document.getElementById('editAccessId').value;
+            const type = document.getElementById('editAccessType').value;
+
+            document.getElementById('editAccessError').style.display = 'none';
+
+            let body = { name: 'Zaktualizowany dostęp' };
+            if (type === 'pin') {
+                const code = document.getElementById('editAccessCode').value;
+                if (!code) {
+                    document.getElementById('editAccessError').textContent = 'Podaj kod PIN';
+                    document.getElementById('editAccessError').style.display = 'block';
+                    return;
+                }
+                if (!/^\d{4,10}$/.test(code)) {
+                    document.getElementById('editAccessError').textContent = 'Kod PIN musi składać się z 4-10 cyfr';
+                    document.getElementById('editAccessError').style.display = 'block';
+                    return;
+                }
+                body.code = code;
+            } else if (type === 'rfid') {
+                const uid = document.getElementById('editAccessUid').value;
+                const name = document.getElementById('editAccessName').value;
+                if (!name || !uid) {
+                    document.getElementById('editAccessError').textContent = 'Podaj nazwę i UID karty';
+                    document.getElementById('editAccessError').style.display = 'block';
+                    return;
+                }
+                body.card_uid = uid;
+                body.name = name;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/access-codes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    document.getElementById('editAccessError').textContent = 'Błąd: ' + (error.detail || 'Nie udało się zaktualizować');
+                    document.getElementById('editAccessError').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('editAccessError').textContent = 'Błąd połączenia: ' + error.message;
+                document.getElementById('editAccessError').style.display = 'block';
+            }
+        }
+
+        function closeModal(modalId) {
+            console.log('Closing modal:', modalId);
+            document.getElementById(modalId).classList.remove('active');
         }
 
         function showDeleteModal() {
@@ -327,6 +516,93 @@
             </div>
         </div>
     </div>
+
+
+
+    <!-- Edit Access Modal -->
+    <div class="modal" id="editAccessModal">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Edytuj dostęp - {{ lock.name }}</h3>
+                <button class="modal-close" onclick="closeModal('editAccessModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editAccessId">
+                <input type="hidden" id="editAccessType">
+                <div id="editAccessError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
+                <div class="form-group" id="editCodeGroup">
+                    <label>Kod PIN</label>
+                    <input type="text" id="editAccessCode" class="form-control" placeholder="1234">
+                </div>
+                <div class="form-group" id="editUidGroup" style="display: none;">
+                    <label>UID Karty</label>
+                    <input type="text" id="editAccessUid" class="form-control" placeholder="A1:B2:C3:D4">
+                </div>
+                <div class="form-group" id="editNameGroup" style="display: none;">
+                    <label>Nazwa</label>
+                    <input type="text" id="editAccessName" class="form-control" placeholder="np. Karta Gościa">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button
+                    style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="closeModal('editAccessModal')">Anuluj</button>
+                <button
+                    style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="updateAccess()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add PIN Modal -->
+    <div class="modal" id="addPinModal">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Dodaj PIN - {{ lock.name }}</h3>
+                <button class="modal-close" onclick="closeModal('addPinModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="addPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
+                <div class="form-group">
+                    <label>Kod PIN</label>
+                    <input type="text" id="pinCode" class="form-control" placeholder="1234">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button
+                    style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="closeModal('addPinModal')">Anuluj</button>
+                <button
+                    style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="saveLockPin()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add RFID Modal -->
+    <div class="modal" id="addRfidModal">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Dodaj RFID - {{ lock.name }}</h3>
+                <button class="modal-close" onclick="closeModal('addRfidModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>UID Karty</label>
+                    <input type="text" id="rfidUID" class="form-control" placeholder="A1:B2:C3:D4">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button
+                    style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="closeModal('addRfidModal')">Anuluj</button>
+                <button
+                    style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
+                    onclick="saveLockRfid()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+
     </main>
 </div>
 </div>

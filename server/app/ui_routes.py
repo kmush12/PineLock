@@ -211,19 +211,34 @@ async def lock_detail(
     # Prepare access methods display (PIN codes + RFID cards)
     access_methods = []
     for code in codes:
-        access_methods.append({
-            'id': code.id,
-            'type': 'pin',
-            'identifier': code.code,
-            'description': code.name or 'Bez nazwy',
-            'valid_from': code.created_at.strftime('%Y-%m-%d %H:%M') if code.created_at else '-',
-            'valid_to': None,
-            'is_active': code.is_active
-        })
+        if code.code is not None:  # PIN
+            access_methods.append({
+                'id': code.id,
+                'type': 'pin',
+                'identifier': code.code,
+                'description': code.name or 'Bez nazwy',
+                'valid_from': code.created_at.strftime('%Y-%m-%d %H:%M') if code.created_at else '-',
+                'valid_to': None,
+                'is_active': code.is_active
+            })
+        elif code.card_uid is not None:  # RFID
+            access_methods.append({
+                'id': code.id,
+                'type': 'rfid',
+                'identifier': code.card_uid,
+                'description': code.name or 'Bez nazwy',
+                'valid_from': code.created_at.strftime('%Y-%m-%d %H:%M') if code.created_at else '-',
+                'valid_to': None,
+                'is_active': code.is_active
+            })
     
+    # Check if PIN and RFID exist
+    has_pin = any(m['type'] == 'pin' for m in access_methods)
+    has_rfid = any(m['type'] == 'rfid' for m in access_methods)
+
     # Access history (placeholder)
     access_history = []
-    
+
     return templates.TemplateResponse(
         "lock_detail.html",
         {
@@ -231,6 +246,9 @@ async def lock_detail(
             **_get_user_context(request),
             "lock": lock,
             "codes": codes,
+            "access_methods": access_methods,
+            "has_pin": has_pin,
+            "has_rfid": has_rfid,
             "access_methods": access_methods,
             "access_history": access_history,
             "message": request.query_params.get("message"),
