@@ -37,11 +37,39 @@ print(settings.api_port)
 PY
 )
 
+# Get local network IP addresses
+LOCAL_IPS=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -3)
+
 # Start server
-echo "Starting PineLock Server..."
-echo "API: http://${API_HOST}:${API_PORT}"
-echo "Docs: http://${API_HOST}:${API_PORT}/docs"
-echo "UI: http://${API_HOST}:${API_PORT}/ui/login"
+echo ""
+echo "╔════════════════════════════════════════════════════════════════╗"
+echo "║           🌲  PineLock Server - Starting...  🔐               ║"
+echo "╚════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "📡 Server is running on:"
+echo ""
+echo "   Local:    http://localhost:${API_PORT}/ui/login"
+echo "   Local:    http://127.0.0.1:${API_PORT}/ui/login"
+echo ""
+
+if [ -n "$LOCAL_IPS" ]; then
+    echo "🌐 Network access (from other devices):"
+    echo ""
+    while IFS= read -r ip; do
+        if [ -n "$ip" ]; then
+            echo "   Network:  http://${ip}:${API_PORT}/ui/login"
+        fi
+    done <<< "$LOCAL_IPS"
+    echo ""
+fi
+
+echo "📚 API Documentation:"
+echo "   Swagger:  http://localhost:${API_PORT}/docs"
+echo "   ReDoc:    http://localhost:${API_PORT}/redoc"
+echo ""
+echo "ℹ️  Default credentials: admin / admin"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
 echo ""
 
 uvicorn app.main:app --host "${API_HOST}" --port "${API_PORT}" --reload

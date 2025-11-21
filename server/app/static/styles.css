@@ -39,6 +39,11 @@ body {
     color: var(--dark-gray);
     min-height: 100vh;
     line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll on body */
+}
+
+html {
+    overflow-x: hidden; /* Prevent horizontal scroll on html */
 }
 
 /* Login Page Styles */
@@ -202,6 +207,91 @@ body {
 .dashboard-container {
     display: flex;
     min-height: 100vh;
+    flex-direction: column;
+}
+
+/* Desktop Top Navbar */
+.desktop-navbar {
+    background: var(--forest-green);
+    color: var(--white);
+    padding: 0 30px;
+    box-shadow: 0 2px 10px var(--shadow);
+    display: none; /* Hidden by default, shown via media query */
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.desktop-navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.desktop-navbar-logo {
+    width: 45px;
+    height: auto;
+}
+
+.desktop-navbar-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.desktop-navbar-subtitle {
+    font-size: 12px;
+    opacity: 0.8;
+    margin: 0;
+}
+
+.desktop-navbar-nav {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.desktop-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    color: var(--white);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.desktop-nav-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.desktop-nav-item.active {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.desktop-nav-icon {
+    font-size: 18px;
+}
+
+.desktop-navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+}
+
+/* Content wrapper for desktop */
+.content-wrapper {
+    display: flex;
+    flex: 1;
 }
 
 .sidebar {
@@ -210,6 +300,7 @@ body {
     color: var(--white);
     padding: 0;
     box-shadow: 2px 0 10px var(--shadow);
+    display: block; /* Shown by default for mobile, hidden via media query on desktop */
 }
 
 .sidebar-header {
@@ -260,26 +351,56 @@ body {
     border-left-color: var(--white);
 }
 
+/* Icon styles - Professional SVG icons */
+.icon {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-lock {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Navigation icons */
 .nav-icon {
     margin-right: 10px;
     font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
 }
 
-.main-content {
+.desktop-nav-icon {
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
     flex: 1;
     padding: 30px 40px;
     overflow-y: auto;
+    width: 100%;
 }
 
 .header {
-    background: var(--white);
-    padding: 20px 30px;
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 8px var(--shadow);
+    background: transparent;
+    padding: 0 0 20px 0;
+    border-radius: 0;
+    box-shadow: none;
     margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 2px solid var(--light-gray);
 }
 
 .header-title {
@@ -289,7 +410,7 @@ body {
 }
 
 .header-actions {
-    display: flex;
+    display: none; /* Hidden on desktop since user info is in navbar */
     gap: 15px;
     align-items: center;
 }
@@ -610,32 +731,330 @@ body {
     100% { transform: rotate(360deg); }
 }
 
+/* Mobile-specific enhancements */
+@media (hover: none) and (pointer: coarse) {
+    /* Touch-friendly button sizing */
+    button, .btn, .btn-primary, .btn-secondary, .btn-danger, .nav-item {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Disable hover effects on touch devices */
+    .lock-card:hover,
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .nav-item:hover {
+        transform: none;
+    }
+    
+    /* Active state for touch feedback */
+    .btn:active,
+    .lock-card:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
+    /* Mobile-optimized sidebar - collapsible hamburger menu */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        max-width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .sidebar.mobile-open {
+        left: 0;
+    }
+    
+    /* Mobile overlay when menu is open */
+    .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    
+    .mobile-overlay.active {
+        display: block;
+    }
+    
+    /* Mobile header with hamburger */
+    .mobile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px; /* Reduced padding */
+        background: var(--forest-green);
+        color: var(--white);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+    
+    .mobile-menu-btn {
+        background: none;
+        border: none;
+        color: var(--white);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .mobile-title {
+        font-size: 18px;
+        font-weight: 700;
+    }
+    
     .dashboard-container {
         flex-direction: column;
     }
     
-    .sidebar {
-        width: 100%;
+    .main-content {
+        padding: 10px; /* Reduced padding for mobile */
+        margin-top: 0;
     }
     
-    .main-content {
+    /* Compact header on mobile */
+    .header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: left;
+        padding: 12px; /* Reduced padding */
+        background: var(--white);
+        border-radius: var(--border-radius);
+        margin-bottom: 12px; /* Reduced margin */
+    }
+    
+    .header-title {
+        font-size: 20px;
+    }
+    
+    .user-info {
+        font-size: 14px;
+    }
+    
+    /* Stats grid - 2 columns on mobile */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px; /* Reduced gap */
+    }
+    
+    .stat-card {
+        padding: 12px; /* Reduced padding */
+    }
+    
+    .stat-value {
+        font-size: 22px; /* Slightly smaller */
+    }
+    
+    .stat-label {
+        font-size: 11px; /* Slightly smaller */
+    }
+    
+    /* Stat icon smaller on mobile */
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+    }
+    
+    .stat-icon svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    /* Single column layout for locks */
+    .locks-grid {
+        grid-template-columns: 1fr;
+        gap: 10px; /* Reduced gap */
+    }
+    
+    .lock-card {
+        padding: 12px; /* Reduced padding */
+    }
+    
+    /* Compact lock card header */
+    .lock-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .lock-title {
+        font-size: 16px; /* Slightly smaller */
+    }
+    
+    /* Stack buttons vertically on mobile */
+    .lock-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .lock-actions .btn-primary,
+    .lock-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Form adjustments */
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Modal full screen on mobile */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 10px;
+        max-height: 95vh;
         padding: 20px;
     }
     
-    .locks-grid {
-        grid-template-columns: 1fr;
+    /* Table responsive - scroll horizontally */
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 14px;
     }
     
-    .header {
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+    }
+    
+    /* Content header compact */
+    .content-header {
         flex-direction: column;
-        gap: 15px;
-        text-align: center;
+        gap: 12px;
     }
     
-    .form-row {
-        grid-template-columns: 1fr;
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    /* Buttons stack on mobile */
+    .header-actions .btn-primary,
+    .header-actions .btn-secondary {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+    
+    /* Sidebar navigation - larger touch targets */
+    .nav-item {
+        padding: 16px 24px;
+        font-size: 16px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+    }
+    
+    /* Login box mobile */
+    .login-box {
+        padding: 30px 25px;
+        margin: 20px;
+    }
+    
+    .login-title {
+        font-size: 26px;
+    }
+    
+    /* Filter panel full width */
+    .filter-panel {
+        padding: 15px;
+    }
+    
+    /* Card content padding */
+    .card-content {
+        padding: 15px;
+    }
+    
+    /* Access methods mobile friendly */
+    .access-method-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .method-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .locks-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Show navbar on tablet too */
+    .desktop-navbar {
+        display: flex !important;
+    }
+    
+    .sidebar {
+        display: none !important;
+    }
+    
+    .mobile-header {
+        display: none !important;
+    }
+}
+
+/* Desktop enhancements */
+@media (min-width: 1025px) {
+    /* Hide mobile elements */
+    .mobile-header,
+    .mobile-overlay,
+    .mobile-menu-btn {
+        display: none !important;
+    }
+    
+    /* Show desktop navbar */
+    .desktop-navbar {
+        display: flex !important;
+    }
+    
+    /* Hide sidebar on desktop */
+    .sidebar {
+        display: none !important;
+    }
+    
+    /* Adjust content wrapper */
+    .content-wrapper {
+        width: 100%;
     }
 }
 

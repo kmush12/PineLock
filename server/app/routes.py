@@ -6,6 +6,8 @@ from datetime import datetime
 
 from app.database import get_session
 from app.models import Lock, AccessCode, RFIDCard, AccessLog
+import logging
+from datetime import datetime
 from app.schemas import (
     LockCreate, LockUpdate, LockResponse,
     AccessCodeCreate, AccessCodeUpdate, AccessCodeResponse,
@@ -295,3 +297,18 @@ async def list_access_logs(
     )
     logs = result.scalars().all()
     return logs
+
+
+# Log Endpoints
+@router.get("/logs/server")
+async def get_server_logs(limit: int = 100):
+    """Get server logs."""
+    # For now, return empty list - can be extended to capture actual logs
+    return []
+
+
+@router.get("/logs/nodes")
+async def get_node_logs(limit: int = 100):
+    """Get logs from all connected nodes."""
+    # For now, return empty list - can be extended to collect logs via MQTT
+    return []

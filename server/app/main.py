@@ -39,6 +39,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to setup MQTT: {e}")
     
+    # Display network information
+    import socket
+    try:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        logger.info(f"Server accessible at http://{local_ip}:{settings.api_port}/ui/login")
+    except Exception:
+        pass
+    
     yield
     
     # Shutdown
