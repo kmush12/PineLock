@@ -5,11 +5,14 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
+import logging
 
 from app.config import settings
 from app.database import get_session
 from app.models import AccessCode, Lock, PendingDevice
 from app.mqtt_client import mqtt_client
+
+logger = logging.getLogger(__name__)
 
 
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -56,31 +59,46 @@ async def logout(request: Request):
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(
-    request: Request,
-    session: AsyncSession = Depends(get_session)
-):
+async def dashboard(request: Request):
     if not _is_authenticated(request):
         return _login_redirect()
+    return RedirectResponse(url="/ui/locks", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/locks", response_class=HTMLResponse)
+async def locks_list(request: Request, session: AsyncSession = Depends(get_session)):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    # Get username for display
+    username = request.session.get("user", "Admin")
+    user_initial = username[0].upper() if username else "A"
+    
+    # Get all locks
     result = await session.execute(select(Lock))
     locks = result.scalars().all()
-    cutoff = datetime.utcnow() - timedelta(days=1)
-    await session.execute(
-        delete(PendingDevice).where(PendingDevice.last_seen < cutoff)
-    )
-    await session.commit()
-    pending_result = await session.execute(
-        select(PendingDevice)
-        .where(PendingDevice.last_seen >= cutoff)
-        .order_by(PendingDevice.last_seen.desc())
-    )
-    pending_devices = pending_result.scalars().all()
+    
+    # Calculate stats
+    total_locks = len(locks)
+    locked_count = sum(1 for lock in locks if lock.is_locked)
+    unlocked_count = sum(1 for lock in locks if not lock.is_locked and lock.is_online)
+    offline_count = sum(1 for lock in locks if not lock.is_online)
+    
+    recent_logs = []
+    
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
+            "username": username,
+            "user_initial": user_initial,
             "locks": locks,
-            "pending_devices": pending_devices,
+            "total_locks": total_locks,
+            "locked_count": locked_count,
+            "unlocked_count": unlocked_count,
+            "offline_count": offline_count,
+            "recent_logs": recent_logs,
+            "active_page": "domki",
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")
         }
@@ -108,13 +126,16 @@ async def create_lock_ui(
     session: AsyncSession = Depends(get_session),
     device_id: str = Form(...),
     name: str = Form(...),
-    location: str = Form(None)
+    location: str = Form(None),
+    description: str = Form(None)
 ):
     if not _is_authenticated(request):
         return _login_redirect()
     device_id = device_id.strip()
     clean_name = name.strip()
     clean_location = location.strip() if location else None
+    clean_description = description.strip() if description else None
+    
     if not device_id or not clean_name:
         return RedirectResponse(
             url="/ui/locks/new?error=missing_fields",
@@ -129,7 +150,8 @@ async def create_lock_ui(
     lock = Lock(
         device_id=device_id,
         name=clean_name,
-        location=clean_location
+        location=clean_location,
+        description=clean_description
     )
     session.add(lock)
     await session.commit()
@@ -152,20 +174,41 @@ async def lock_detail(
 ):
     if not _is_authenticated(request):
         return _login_redirect()
+    
     lock_result = await session.execute(select(Lock).where(Lock.id == lock_id))
     lock = lock_result.scalar_one_or_none()
     if not lock:
         return RedirectResponse(url="/ui/dashboard?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+    
     codes_result = await session.execute(
         select(AccessCode).where(AccessCode.lock_id == lock_id).order_by(AccessCode.created_at.desc())
     )
     codes = codes_result.scalars().all()
+    
+    # Prepare access methods display (PIN codes + RFID cards)
+    access_methods = []
+    for code in codes:
+        access_methods.append({
+            'id': code.id,
+            'type': 'pin',
+            'identifier': code.code,
+            'description': code.name or 'Bez nazwy',
+            'valid_from': code.created_at.strftime('%Y-%m-%d %H:%M') if code.created_at else '-',
+            'valid_to': None,
+            'is_active': code.is_active
+        })
+    
+    # Access history (placeholder)
+    access_history = []
+    
     return templates.TemplateResponse(
         "lock_detail.html",
         {
             "request": request,
             "lock": lock,
             "codes": codes,
+            "access_methods": access_methods,
+            "access_history": access_history,
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")
         }
@@ -285,3 +328,268 @@ async def update_access_code_ui(
         url=f"/ui/locks/{access_code.lock_id}?message=code_updated",
         status_code=status.HTTP_303_SEE_OTHER
     )
+
+
+@router.get("/access-codes", response_class=HTMLResponse)
+async def access_codes_list(request: Request, session: AsyncSession = Depends(get_session)):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    # Get filter parameters
+    filter_lock_id = request.query_params.get("lock_id")
+    filter_status = request.query_params.get("status")
+    
+    # Base query
+    query = select(AccessCode).join(Lock)
+    
+    # Apply filters
+    if filter_lock_id:
+        query = query.where(AccessCode.lock_id == int(filter_lock_id))
+    if filter_status == "active":
+        query = query.where(AccessCode.is_active == True)
+    elif filter_status == "inactive":
+        query = query.where(AccessCode.is_active == False)
+    
+    query = query.order_by(AccessCode.created_at.desc())
+    
+    codes_result = await session.execute(query)
+    codes = codes_result.scalars().all()
+    
+    # Get all locks for filter dropdown
+    locks_result = await session.execute(select(Lock).order_by(Lock.name))
+    all_locks = locks_result.scalars().all()
+    
+    # Calculate stats
+    total_codes = len(codes)
+    active_codes = sum(1 for c in codes if c.is_active)
+    inactive_codes = total_codes - active_codes
+    locks_with_codes = len(set(c.lock_id for c in codes))
+    
+    return templates.TemplateResponse(
+        "access_codes.html",
+        {
+            "request": request,
+            "codes": codes,
+            "all_locks": all_locks,
+            "total_codes": total_codes,
+            "active_codes": active_codes,
+            "inactive_codes": inactive_codes,
+            "locks_with_codes": locks_with_codes,
+            "filter_lock_id": int(filter_lock_id) if filter_lock_id else None,
+            "filter_status": filter_status,
+            "active_page": "access-codes",
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error")
+        }
+    )
+
+
+@router.post("/access-codes/{code_id}/delete")
+async def delete_access_code_ui(
+    code_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session)
+):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    code_result = await session.execute(select(AccessCode).where(AccessCode.id == code_id))
+    access_code = code_result.scalar_one_or_none()
+    
+    if not access_code:
+        return RedirectResponse(
+            url="/ui/access-codes?error=not_found",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+    
+    lock_id = access_code.lock_id
+    await session.delete(access_code)
+    await session.commit()
+    
+    # Request sync with device
+    lock_result = await session.execute(select(Lock).where(Lock.id == lock_id))
+    lock = lock_result.scalar_one_or_none()
+    if lock:
+        mqtt_client.request_sync(lock.device_id)
+    
+    return RedirectResponse(
+        url="/ui/access-codes?message=code_deleted",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+@router.get("/rfid-cards", response_class=HTMLResponse)
+async def rfid_cards_list(request: Request, session: AsyncSession = Depends(get_session)):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    return templates.TemplateResponse(
+        "rfid_cards.html",
+        {
+            "request": request,
+            "active_page": "rfid-cards",
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error")
+        }
+    )
+
+
+@router.get("/access-logs", response_class=HTMLResponse)
+async def access_logs_list(request: Request, session: AsyncSession = Depends(get_session)):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    from app.models import AccessLog, RFIDCard
+    
+    # Get filter parameters
+    filter_lock_id = request.query_params.get("lock_id")
+    filter_access_type = request.query_params.get("access_type")
+    filter_success = request.query_params.get("success")
+    
+    # Base query
+    query = select(AccessLog).join(Lock)
+    
+    # Apply filters
+    if filter_lock_id:
+        query = query.where(AccessLog.lock_id == int(filter_lock_id))
+    if filter_access_type:
+        query = query.where(AccessLog.access_type == filter_access_type)
+    if filter_success == "true":
+        query = query.where(AccessLog.success == True)
+    elif filter_success == "false":
+        query = query.where(AccessLog.success == False)
+    
+    query = query.order_by(AccessLog.timestamp.desc()).limit(100)
+    
+    logs_result = await session.execute(query)
+    logs = logs_result.scalars().all()
+    
+    # Get all locks for filter dropdown
+    locks_result = await session.execute(select(Lock).order_by(Lock.name))
+    all_locks = locks_result.scalars().all()
+    
+    # Calculate stats
+    total_logs = len(logs)
+    successful_attempts = sum(1 for log in logs if log.success)
+    failed_attempts = total_logs - successful_attempts
+    
+    # Count today's logs
+    from datetime import datetime, timedelta
+    today = datetime.utcnow().date()
+    today_count = sum(1 for log in logs if log.timestamp and log.timestamp.date() == today)
+    
+    return templates.TemplateResponse(
+        "access_logs.html",
+        {
+            "request": request,
+            "logs": logs,
+            "all_locks": all_locks,
+            "total_logs": total_logs,
+            "successful_attempts": successful_attempts,
+            "failed_attempts": failed_attempts,
+            "today_count": today_count,
+            "filter_lock_id": int(filter_lock_id) if filter_lock_id else None,
+            "filter_access_type": filter_access_type,
+            "filter_success": True if filter_success == "true" else (False if filter_success == "false" else None),
+            "has_more": False,
+            "active_page": "access-logs",
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error")
+        }
+    )
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request, session: AsyncSession = Depends(get_session)):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    from app.models import RFIDCard, AccessLog
+    
+    username = request.session.get("user", "Admin")
+    
+    # System info
+    system_info = {
+        "version": settings.api_version,
+        "api_host": settings.api_host,
+        "api_port": settings.api_port,
+        "database_url": settings.database_url,
+        "session_secret_key": settings.session_secret_key
+    }
+    
+    # MQTT config
+    mqtt_config = {
+        "host": settings.mqtt_broker_host,
+        "port": settings.mqtt_broker_port,
+        "username": settings.mqtt_username,
+        "topic_prefix": settings.mqtt_topic_prefix
+    }
+    
+    # Database stats
+    locks_count_result = await session.execute(select(Lock))
+    locks_count = len(locks_count_result.scalars().all())
+    
+    codes_count_result = await session.execute(select(AccessCode))
+    codes_count = len(codes_count_result.scalars().all())
+    
+    rfid_count_result = await session.execute(select(RFIDCard))
+    rfid_count = len(rfid_count_result.scalars().all())
+    
+    logs_count_result = await session.execute(select(AccessLog))
+    logs_count = len(logs_count_result.scalars().all())
+    
+    db_stats = {
+        "locks_count": locks_count,
+        "codes_count": codes_count,
+        "rfid_count": rfid_count,
+        "logs_count": logs_count
+    }
+    
+    return templates.TemplateResponse(
+        "settings.html",
+        {
+            "request": request,
+            "username": username,
+            "system_info": system_info,
+            "mqtt_config": mqtt_config,
+            "db_stats": db_stats,
+            "active_page": "settings",
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error")
+        }
+    )
+
+
+@router.post("/settings/password")
+async def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...)
+):
+    if not _is_authenticated(request):
+        return _login_redirect()
+    
+    # Verify current password
+    if current_password != settings.admin_password:
+        return RedirectResponse(
+            url="/ui/settings?error=invalid_credentials",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+    
+    # Verify new passwords match
+    if new_password != confirm_password:
+        return RedirectResponse(
+            url="/ui/settings?error=password_mismatch",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+    
+    # TODO: Save new password to .env file
+    # For now, just show a message that it would need to be changed in .env
+    return RedirectResponse(
+        url="/ui/settings?error=password_change_requires_env_update",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+

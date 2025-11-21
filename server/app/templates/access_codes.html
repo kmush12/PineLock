@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Kody PIN - PineLock{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+            <h2 class="sidebar-title">PineLock</h2>
+            <p class="sidebar-subtitle">System zarządzania</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+                <span class="nav-icon">🔐</span>
+                Domki
+            </a>
+            <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                <span class="nav-icon">🔢</span>
+                Kody PIN
+            </a>
+            <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                <span class="nav-icon">💳</span>
+                Karty RFID
+            </a>
+            <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                Historia dostępu
+            </a>
+            <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+                <span class="nav-icon">⚙️</span>
+                Ustawienia
+            </a>
+            <a href="/ui/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <span class="nav-icon">🚪</span>
+                Wyloguj się
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+<div class="content-header">
+    <div>
+        <h1>Kody PIN</h1>
+        <p class="subtitle">Zarządzaj kodami dostępu do wszystkich domków</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn-secondary" onclick="toggleFilter()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+            </svg>
+            Filtruj
+        </button>
+    </div>
+</div>
+
+<!-- Filter Panel (hidden by default) -->
+<div id="filter-panel" class="filter-panel" style="display: none;">
+    <form method="GET" action="/ui/access-codes">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Domek</label>
+                <select name="lock_id" class="form-control">
+                    <option value="">Wszystkie domki</option>
+                    {% for lock in all_locks %}
+                    <option value="{{ lock.id }}" {% if filter_lock_id == lock.id %}selected{% endif %}>
+                        {{ lock.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="" {% if not filter_status %}selected{% endif %}>Wszystkie</option>
+                    <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Aktywne</option>
+                    <option value="inactive" {% if filter_status == 'inactive' %}selected{% endif %}>Nieaktywne</option>
+                </select>
+            </div>
+            <div class="form-group" style="align-self: flex-end;">
+                <button type="submit" class="btn-primary">Zastosuj</button>
+                <a href="/ui/access-codes" class="btn-secondary">Wyczyść</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if message %}
+<div class="alert alert-success">
+    {% if message == 'code_created' %}
+        Kod PIN został utworzony.
+    {% elif message == 'code_updated' %}
+        Kod PIN został zaktualizowany.
+    {% elif message == 'code_deleted' %}
+        Kod PIN został usunięty.
+    {% else %}
+        {{ message }}
+    {% endif %}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-error">
+    {% if error == 'invalid_pin' %}
+        Kod PIN musi składać się tylko z cyfr i mieć długość 4-10 znaków.
+    {% elif error == 'not_found' %}
+        Nie znaleziono kodu PIN.
+    {% else %}
+        {{ error }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Wszystkie kody</div>
+        <div class="stat-value">{{ total_codes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Aktywne</div>
+        <div class="stat-value stat-success">{{ active_codes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Nieaktywne</div>
+        <div class="stat-value stat-warning">{{ inactive_codes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Domki z kodami</div>
+        <div class="stat-value">{{ locks_with_codes }}</div>
+    </div>
+</div>
+
+<!-- Access Codes Table -->
+<div class="card">
+    <div class="card-header">
+        <h2>Lista kodów PIN</h2>
+    </div>
+    <div class="card-content">
+        {% if codes %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Kod PIN</th>
+                    <th>Nazwa/Opis</th>
+                    <th>Domek</th>
+                    <th>Status</th>
+                    <th>Data utworzenia</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for code in codes %}
+                <tr>
+                    <td>
+                        <span class="code-display">{{ code.code }}</span>
+                    </td>
+                    <td>{{ code.name or '-' }}</td>
+                    <td>
+                        <a href="/ui/locks/{{ code.lock.id }}" class="link">
+                            {{ code.lock.name }}
+                        </a>
+                        {% if code.lock.location %}
+                        <span class="text-muted">• {{ code.lock.location }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if code.is_active %}
+                        <span class="badge badge-success">Aktywny</span>
+                        {% else %}
+                        <span class="badge badge-warning">Nieaktywny</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if code.created_at %}
+                        {{ code.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon" onclick="editCode({{ code.id }}, '{{ code.code }}', '{{ code.name or '' }}', {{ 'true' if code.is_active else 'false' }}, {{ code.lock_id }})" title="Edytuj">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon btn-danger" onclick="deleteCode({{ code.id }}, '{{ code.lock.name }}')" title="Usuń">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <h3>Brak kodów PIN</h3>
+            <p>Nie znaleziono żadnych kodów dostępu.</p>
+            <p>Dodaj kody PIN w szczegółach domków.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Code Modal -->
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edytuj kod PIN</h2>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form id="editForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit-code">Kod PIN *</label>
+                    <input type="text" id="edit-code" name="code" class="form-control" 
+                           pattern="[0-9]{4,10}" required 
+                           placeholder="np. 1234">
+                    <small class="form-text">4-10 cyfr</small>
+                </div>
+                <div class="form-group">
+                    <label for="edit-name">Nazwa/Opis</label>
+                    <input type="text" id="edit-name" name="name" class="form-control" 
+                           placeholder="np. Gość letni 2024">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="edit-active" name="is_active" value="true">
+                        <span>Kod aktywny</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeEditModal()">Anuluj</button>
+                <button type="submit" class="btn-primary">Zapisz zmiany</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Potwierdź usunięcie</h2>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <form id="deleteForm" method="POST">
+            <div class="modal-body">
+                <p>Czy na pewno chcesz usunąć ten kod PIN z domku <strong id="delete-lock-name"></strong>?</p>
+                <p class="text-warning">Tej operacji nie można cofnąć.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Anuluj</button>
+                <button type="submit" class="btn-danger">Usuń kod</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleFilter() {
+    const panel = document.getElementById('filter-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function editCode(id, code, name, isActive, lockId) {
+    document.getElementById('editForm').action = `/ui/access-codes/${id}/update`;
+    document.getElementById('edit-code').value = code;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-active').checked = isActive;
+    document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+function deleteCode(id, lockName) {
+    document.getElementById('deleteForm').action = `/ui/access-codes/${id}/delete`;
+    document.getElementById('delete-lock-name').textContent = lockName;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Close modals on background click
+window.onclick = function(event) {
+    const editModal = document.getElementById('editModal');
+    const deleteModal = document.getElementById('deleteModal');
+    if (event.target === editModal) {
+        closeEditModal();
+    }
+    if (event.target === deleteModal) {
+        closeDeleteModal();
+    }
+}
+</script>
+    </main>
+</div>
+{% endblock %}

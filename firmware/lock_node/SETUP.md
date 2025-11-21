@@ -1,102 +1,456 @@
-# Firmware Setup Guide
+<div align="center">
 
-## Prerequisites
+# 🔧 Hardware Setup Guide
+## PineLock ESP32-C3 Assembly & Configuration
 
-- Seeed XIAO ESP32-C3 board
-- USB-C cable for programming
-- PlatformIO installed (`pip install platformio`)
-- Hardware components (see main README)
+**Target Board:** Seeed XIAO ESP32-C3  
+**Skill Level:** Intermediate  
+**Est. Time:** 45-60 minutes
 
-## Hardware Assembly
+[![Hardware](https://img.shields.io/badge/hardware-ESP32--C3-blue)]() [![Complexity](https://img.shields.io/badge/complexity-moderate-yellow)]() [![Tested](https://img.shields.io/badge/status-verified-success)]()
 
-### 1. I2C Bus (Shared by PCF8574 and DS3231)
+---
 
-Connect to ESP32-C3:
-- SDA → GPIO 6
-- SCL → GPIO 7
-- VCC → 3.3V
-- GND → GND
+</div>
 
-### 2. PCF8574 I2C Expander
+## 📦 Prerequisites
 
-Connect 4x4 matrix keypad to PCF8574:
-- P0-P3: Row pins (R1-R4)
-- P4-P7: Column pins (C1-C4)
+### Hardware Components
 
-PCF8574 I2C address: 0x20 (default)
+| Component | Specification | Quantity | Notes |
+|-----------|---------------|----------|-------|
+| 🔲 **ESP32-C3** | Seeed XIAO ESP32-C3 | 1 | Main controller |
+| 🔌 **USB Cable** | USB-C data cable | 1 | For programming |
+| 🎹 **Keypad** | 4x4 matrix keypad | 1 | PIN entry |
+| 🔧 **I2C Expander** | PCF8574 module | 1 | Keypad interface |
+| 📡 **RFID Reader** | RC522 module (SPI) | 1 | Key detection |
+| ⏰ **RTC** | DS3231 module | 1 | Timekeeping |
+| 🔋 **Battery** | CR2032 coin cell | 1 | RTC backup |
+| ⚡ **MOSFET** | Logic level MOSFET module | 1 | Lock control |
+| 🔒 **Lock** | 12V electromagnetic lock | 1 | Physical lock |
+| 🔌 **Power Supply** | 12V DC adapter | 1 | System power |
+| 🔗 **Wires** | Dupont jumper wires | Set | Connections |
 
-### 3. RC522 RFID Reader (Key Presence Detection)
+### Software Requirements
 
-Connect to ESP32-C3 SPI:
-- SDA/SS → GPIO 3
-- SCK → GPIO 8
-- MOSI → GPIO 5
-- MISO → GPIO 4
-- RST → GPIO 2
-- VCC → 3.3V
-- GND → GND
+- 🖥️ **PlatformIO** - Build system (`pip install platformio`)
+- 💻 **VS Code** (optional) - PlatformIO IDE extension
+- 🐍 **Python 3.7+** - For PlatformIO
+- 📡 **MQTT Broker** - Mosquitto or similar
 
-### 4. DS3231 RTC Module
+---
 
-Already connected via I2C (shared bus with PCF8574)
-- Insert CR2032 battery for backup power
+## 🔌 Hardware Assembly
 
-### 5. MOSFET Lock Control
+### Circuit Overview
 
-Connect MOSFET module:
-- Signal/IN → GPIO 10
-- VCC → 5V (from power supply)
-- GND → Common ground
-- Load: 12V electromagnetic lock
-
-**Circuit:**
 ```
-12V Supply → Lock → MOSFET Drain
-MOSFET Source → GND
-ESP32 GPIO 10 → MOSFET Gate (via module)
-```
-
-## Software Setup
-
-### 1. Install PlatformIO
-
-```bash
-# Using pip
-pip install platformio
-
-# Or using VS Code extension
-# Install "PlatformIO IDE" from VS Code marketplace
+┌──────────────────────────────────────────────────────────┐
+│                     ESP32-C3 XIAO                        │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  GPIO 6 (SDA) ──────────┬──────── PCF8574 (I2C)   │  │
+│  │  GPIO 7 (SCL) ──────────┴──────── DS3231 (I2C)    │  │
+│  │  GPIO 3 (SS)   ────────────────── RC522           │  │
+│  │  GPIO 4 (MISO) ────────────────── RC522           │  │
+│  │  GPIO 5 (MOSI) ────────────────── RC522           │  │
+│  │  GPIO 8 (SCK)  ────────────────── RC522           │  │
+│  │  GPIO 2 (RST)  ────────────────── RC522           │  │
+│  │  GPIO 10       ────────────────── MOSFET Module   │  │
+│  └────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### 2. Configure WiFi and MQTT
+### 1️⃣ I2C Bus Configuration
 
-Edit `firmware/lock_node/include/config.h`:
+**Shared by PCF8574 (Keypad) and DS3231 (RTC)**
+
+**Shared by PCF8574 (Keypad) and DS3231 (RTC)**
+
+| Pin | Connection | Color Suggestion |
+|-----|------------|------------------|
+| SDA | GPIO 6 | 🔵 Blue |
+| SCL | GPIO 7 | 🟡 Yellow |
+| VCC | 3.3V | 🔴 Red |
+| GND | Ground | ⚫ Black |
+
+> ⚠️ **Important**: Both PCF8574 and DS3231 share the same I2C bus. Connect them in parallel.
+
+---
+
+### 2️⃣ PCF8574 I2C Expander (Keypad Interface)
+
+**4x4 Matrix Keypad Connection**
+
+| PCF8574 Pin | Function | Keypad Pin |
+|-------------|----------|------------|
+| P0 | Row 1 | R1 |
+| P1 | Row 2 | R2 |
+| P2 | Row 3 | R3 |
+| P3 | Row 4 | R4 |
+| P4 | Column 1 | C1 |
+| P5 | Column 2 | C2 |
+| P6 | Column 3 | C3 |
+| P7 | Column 4 | C4 |
+
+**I2C Address:** `0x20` (default)
+
+<details>
+<summary>🔍 <b>Keypad Layout Reference</b></summary>
+
+```
+┌───┬───┬───┬───┐
+│ 1 │ 2 │ 3 │ A │
+├───┼───┼───┼───┤
+│ 4 │ 5 │ 6 │ B │
+├───┼───┼───┼───┤
+│ 7 │ 8 │ 9 │ C │
+├───┼───┼───┼───┤
+│ * │ 0 │ # │ D │
+└───┴───┴───┴───┘
+
+* = Clear PIN
+# = Submit PIN
+A-D = Reserved
+```
+
+</details>
+
+---
+
+### 3️⃣ RC522 RFID Reader (Key Presence Detection)
+
+**SPI Connection to ESP32-C3**
+
+| RC522 Pin | ESP32-C3 Pin | GPIO | Description |
+|-----------|--------------|------|-------------|
+| SDA (SS) | GPIO 3 | 3 | Chip Select |
+| SCK | GPIO 8 | 8 | SPI Clock |
+| MOSI | GPIO 5 | 5 | Master Out |
+| MISO | GPIO 4 | 4 | Master In |
+| IRQ | - | - | Not connected |
+| GND | GND | - | Ground |
+| RST | GPIO 2 | 2 | Reset |
+| VCC | 3.3V | - | Power |
+
+> 💡 **Tip**: Use short wires for SPI connections to avoid signal integrity issues.
+
+---
+
+### 4️⃣ DS3231 RTC Module
+
+**Real-Time Clock with Battery Backup**
+
+Already connected via I2C bus (shared with PCF8574)
+
+**Additional Setup:**
+1. Insert CR2032 battery into battery holder
+2. Set initial time on first boot (auto-set to compile time)
+3. RTC will maintain time during power loss
 
 ```cpp
-// WiFi Configuration
-#define WIFI_SSID "YourWiFiNetwork"
-#define WIFI_PASSWORD "YourWiFiPassword"
-
-// MQTT Configuration
-#define MQTT_BROKER "192.168.1.100"  // Raspberry Pi IP
-#define MQTT_PORT 1883
-#define MQTT_USERNAME "pinelock"
-#define MQTT_PASSWORD "your_mqtt_password"
-
-// Device Configuration
-#define DEVICE_ID "lock_001"  // Unique ID for this lock
+// Time is automatically set on first boot:
+rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 ```
 
-### 3. Build Firmware
+---
 
+### 5️⃣ MOSFET Lock Control
+
+**12V Electromagnetic Lock Driver**
+
+| Connection | Pin/Wire | Notes |
+|------------|----------|-------|
+| Signal IN | GPIO 10 | From ESP32-C3 |
+| VCC | 5V | MOSFET module power |
+| GND | Common GND | Shared ground |
+| MOSFET OUT+ | Lock + | To lock positive |
+| MOSFET OUT- | 12V GND | To lock negative |
+
+**Power Circuit:**
+```
+12V PSU (+) ──→ Lock (+)
+Lock (-)    ──→ MOSFET Drain
+MOSFET Source ──→ 12V PSU (-)
+ESP32 GPIO10  ──→ MOSFET Gate (via module)
+```
+
+> 🔒 **Safety**: Ensure proper current rating for your lock. Typical locks draw 200-500mA.
+
+---
+
+## 💻 Software Setup
+
+### 1️⃣ Install PlatformIO
+
+**Option A: Command Line**
 ```bash
-cd firmware/lock_node
-pio run
+pip install platformio
 ```
 
-### 4. Upload to ESP32-C3
+**Option B: VS Code Extension**
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "PlatformIO IDE"
+4. Click Install
 
-Connect ESP32-C3 via USB and upload:
+---
+
+### 2️⃣ Configure WiFi and MQTT
+
+Edit `include/config.h`:
+
+Edit `include/config.h`:
+
+```cpp
+// 🌐 WiFi Configuration
+#define WIFI_SSID "YourWiFiNetwork"       // Your 2.4GHz network name
+#define WIFI_PASSWORD "YourWiFiPassword"  // Network password
+
+// 📡 MQTT Broker Configuration
+#define MQTT_BROKER "192.168.1.100"       // Broker IP (e.g., Raspberry Pi)
+#define MQTT_PORT 1883                     // Standard MQTT port
+#define MQTT_USERNAME "pinelock"           // MQTT username (or "" if none)
+#define MQTT_PASSWORD "your_mqtt_password" // MQTT password (or "" if none)
+
+// 🔑 Device Configuration
+#define DEVICE_ID "lock_001"  // ⚠️ MUST BE UNIQUE FOR EACH LOCK!
+```
+
+> 🔐 **Security Reminder**: Never commit real credentials to Git. Use `config.h.example` as template.
+
+---
+
+### 3️⃣ Build & Upload Firmware
+
+**Using PlatformIO CLI:**
+```bash
+cd lock_node
+pio run                    # Build only
+pio run --target upload    # Build and upload
+pio device monitor         # View serial output
+```
+
+**Using VS Code:**
+1. Open `lock_node` folder in VS Code
+2. Click PlatformIO icon in sidebar
+3. Select "Upload" under env:esp32-c3
+4. Click "Monitor" to view output
+
+---
+
+## 🧪 Testing & Verification
+
+### Initial Boot Sequence
+
+Expected serial output:
+```
+=== PineLock Firmware ===
+Device ID: lock_001
+Watchdog configured
+PCF8574 initialized
+RTC initialized
+RFID initialized
+Hardware initialization complete
+WARNING: No default PIN configured. Add PINs via MQTT.
+WiFi connected!
+IP address: 192.168.1.XXX
+MQTT connected!
+Subscribed to topics
+```
+
+### Component Testing
+
+#### ✅ Test 1: I2C Devices
+```bash
+# Both PCF8574 and DS3231 should be detected
+# Check serial output for "PCF8574 initialized" and "RTC initialized"
+```
+
+#### ✅ Test 2: Keypad
+```bash
+# Press any key on keypad
+# Should see: "Key pressed: X" in serial monitor
+```
+
+#### ✅ Test 3: RFID Reader
+```bash
+# Place RFID card near reader
+# Should see: "RFID key detected in box: XXXXXXXX"
+```
+
+#### ✅ Test 4: Lock Control
+```bash
+# Via MQTT:
+mosquitto_pub -h localhost -t "pinelock/lock_001/command" -m '{"action":"unlock"}'
+# Lock should activate for 5 seconds then re-lock
+```
+
+#### ✅ Test 5: MQTT Communication
+```bash
+# Subscribe to all device topics:
+mosquitto_sub -h localhost -t "pinelock/lock_001/#" -v
+
+# You should see:
+# - Heartbeat every 60 seconds
+# - Status updates on state changes
+# - Access events when PIN entered
+```
+
+---
+
+## 🐛 Troubleshooting
+
+<details>
+<summary><b>❌ "PCF8574 not found" Error</b></summary>
+
+**Solutions:**
+1. Check I2C wiring (SDA=GPIO6, SCL=GPIO7)
+2. Verify 3.3V power to PCF8574
+3. Check I2C address (default 0x20)
+4. Use I2C scanner to detect device:
+   ```cpp
+   Wire.begin(6, 7);
+   for(byte i = 1; i < 127; i++) {
+       Wire.beginTransmission(i);
+       if(Wire.endTransmission() == 0) {
+           Serial.printf("Found I2C device at 0x%02X\n", i);
+       }
+   }
+   ```
+
+</details>
+
+<details>
+<summary><b>❌ "RTC not found" Error</b></summary>
+
+**Solutions:**
+1. Verify I2C connections (shared with PCF8574)
+2. Check CR2032 battery installation
+3. Verify DS3231 module power (3.3V)
+4. Check for I2C address conflicts
+
+</details>
+
+<details>
+<summary><b>❌ RFID Not Detecting Cards</b></summary>
+
+**Solutions:**
+1. Verify SPI connections:
+   - MISO = GPIO 4
+   - MOSI = GPIO 5
+   - SCK = GPIO 8
+   - SS = GPIO 3
+   - RST = GPIO 2
+2. Check 3.3V power supply
+3. Use shorter wires (max 10cm for SPI)
+4. Test with MFRC522 library examples
+5. Try different RFID cards
+
+</details>
+
+<details>
+<summary><b>❌ WiFi Connection Failed</b></summary>
+
+**Solutions:**
+1. Verify SSID and password in config.h
+2. Ensure 2.4GHz network (ESP32-C3 doesn't support 5GHz)
+3. Check WiFi signal strength
+4. Disable WiFi security temporarily for testing
+5. Check for MAC address filtering on router
+
+</details>
+
+<details>
+<summary><b>❌ MQTT Connection Failed</b></summary>
+
+**Solutions:**
+1. Verify broker IP address
+2. Test broker: `mosquitto_sub -h [broker_ip] -t test`
+3. Check firewall settings
+4. Verify username/password (or use empty strings)
+5. Ensure broker allows remote connections
+
+</details>
+
+<details>
+<summary><b>❌ Watchdog Reset Loop</b></summary>
+
+**Solutions:**
+1. Check for blocking code in loop()
+2. Increase WDT_TIMEOUT from 30 to 60 seconds
+3. Ensure WiFi/MQTT don't block indefinitely
+4. Add debug prints to locate hang point
+
+</details>
+
+<details>
+<summary><b>❌ Lock Not Activating</b></summary>
+
+**Solutions:**
+1. Verify GPIO 10 connection to MOSFET
+2. Check 12V power supply
+3. Test MOSFET manually with 3.3V signal
+4. Verify lock polarity (some locks are polarized)
+5. Check current rating (lock may draw more than supply provides)
+
+</details>
+
+---
+
+## 📊 Pin Summary Table
+
+| Function | GPIO | Component | Notes |
+|----------|------|-----------|-------|
+| I2C SDA | 6 | PCF8574, DS3231 | Shared bus |
+| I2C SCL | 7 | PCF8574, DS3231 | Shared bus |
+| SPI SS | 3 | RC522 | Chip select |
+| SPI MISO | 4 | RC522 | Data in |
+| SPI MOSI | 5 | RC522 | Data out |
+| SPI SCK | 8 | RC522 | Clock |
+| RFID RST | 2 | RC522 | Reset |
+| Lock Control | 10 | MOSFET | PWM capable |
+
+---
+
+## 🔋 Power Requirements
+
+| Component | Voltage | Current | Notes |
+|-----------|---------|---------|-------|
+| ESP32-C3 | 3.3V | ~200mA | Via USB or regulator |
+| PCF8574 | 3.3V | ~1mA | Low power |
+| DS3231 | 3.3V | ~0.2mA | Battery backup |
+| RC522 | 3.3V | ~13-26mA | During read |
+| Lock | 12V | 200-500mA | Check your model |
+| **Total** | **12V** | **~1A** | **Recommended: 2A supply** |
+
+**Recommended Setup:**
+- 12V 2A power supply
+- 12V → Buck converter → 5V → ESP32-C3 (3.3V regulated onboard)
+- 12V → Direct to lock via MOSFET
+
+---
+
+## 🎯 Next Steps
+
+After successful hardware setup:
+
+1. 📖 Read [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment
+2. 🧪 Run full test suite (see DEPLOYMENT.md)
+3. 🔐 Add PIN codes and RFID cards
+4. 📊 Configure server/backend for MQTT
+5. 🏠 Install in final location
+
+---
+
+<div align="center">
+
+### 🌲 PineLock Hardware Setup Complete!
+
+**Ready for firmware deployment** ✅
+
+[← Back to README](README.md) | [Deployment Guide →](DEPLOYMENT.md)
+
+</div>
 
 ```bash
 pio run --target upload

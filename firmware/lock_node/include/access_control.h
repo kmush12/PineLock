@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <RTClib.h>
+#include <Preferences.h>
 #include "config.h"
 
 // Structure for PIN codes
@@ -30,6 +31,7 @@ private:
     int pinCodeCount;
     int rfidCardCount;
     RTC_DS3231* rtc;
+    Preferences preferences;
 
 public:
     AccessControl(RTC_DS3231* rtcInstance);
@@ -52,6 +54,10 @@ public:
     
     // Time-based validation
     bool isWithinValidTime(DateTime validFrom, DateTime validUntil);
+    
+    // Persistence
+    void saveToEEPROM();
+    void loadFromEEPROM();
 };
 
 #endif // ACCESS_CONTROL_H

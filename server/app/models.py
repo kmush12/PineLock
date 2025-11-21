@@ -14,6 +14,7 @@ class Lock(Base):
     device_id = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     location = Column(String)
+    description = Column(String)
     is_online = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=True)
     is_key_present = Column(Boolean, default=False)  # RFID key presence detection

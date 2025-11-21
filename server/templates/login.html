@@ -6,7 +6,28 @@
 <div class="login-container">
     <div class="login-box">
         <div class="logo-container">
-            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock Logo" class="logo-img">
+            <!-- PineLock Logo SVG - Pine tree with keyhole -->
+            <svg class="logo-svg" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                <!-- Pine tree base -->
+                <polygon points="100,30 60,90 75,90" fill="#1e5945"/>
+                <polygon points="100,30 140,90 125,90" fill="#2d6f51"/>
+                
+                <!-- Middle layer -->
+                <polygon points="100,70 50,140 70,140" fill="#1e5945"/>
+                <polygon points="100,70 150,140 130,140" fill="#2d6f51"/>
+                
+                <!-- Bottom layer -->
+                <polygon points="100,110 40,190 65,190" fill="#1e5945"/>
+                <polygon points="100,110 160,190 135,190" fill="#2d6f51"/>
+                
+                <!-- Trunk -->
+                <rect x="85" y="190" width="30" height="50" fill="#1e5945"/>
+                <rect x="100" y="190" width="15" height="50" fill="#2d6f51"/>
+                
+                <!-- Keyhole -->
+                <circle cx="100" cy="120" r="22" fill="#f5f5dc"/>
+                <path d="M 90,130 L 90,160 L 110,160 L 110,130 L 105,130 L 105,145 L 95,145 L 95,130 Z" fill="#f5f5dc"/>
+            </svg>
         </div>
         
         <h1 class="login-title">🌲 PineLock</h1>
@@ -26,7 +47,7 @@
         </div>
         {% endif %}
         
-        <form method="POST" action="/ui/login">
+        <form method="POST" action="/login">
             <div class="form-group">
                 <label for="username" class="form-label">Nazwa użytkownika</label>
                 <input 

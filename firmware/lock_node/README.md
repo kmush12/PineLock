@@ -1,35 +1,108 @@
-# PineLock Firmware
+<div align="center">
 
-Firmware for ESP32-C3 based domki with offline authentication capability.
+# 🌲 PineLock Firmware
 
-## Features
+### *Secure. Smart. Simple.*
 
-- **WiFi Connectivity**: Connects to local WiFi network
-- **MQTT Communication**: Two-way communication with central server
-- **PIN Keypad**: 4x4 matrix keypad via PCF8574 I2C expander
-- **RFID Reader**: RC522 RFID reader for key presence detection
-- **Real-Time Clock**: DS3231 RTC for time-based access control
-- **Lock Control**: MOSFET-controlled 12V electromagnetic lock
-- **PIN Authentication**: Local PIN-based access control
-- **RFID Key Detection**: Detects presence of registered keys in the lock box
-- **Auto-locking**: Automatically locks after configurable duration
-- **Event Reporting**: Reports all access attempts to server
+**ESP32-C3 Smart Lock System with Offline Authentication**
 
-## Hardware
+[![Platform](https://img.shields.io/badge/platform-ESP32--C3-blue.svg)](https://www.espressif.com/en/products/socs/esp32-c3)
+[![Framework](https://img.shields.io/badge/framework-Arduino-00979D.svg)](https://www.arduino.cc/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-Beta-yellow.svg)](CODE_REVIEW_REPORT.md)
 
-See [SETUP.md](SETUP.md) for detailed hardware setup instructions.
+---
 
-## Quick Start
+</div>
 
-1. Configure WiFi and MQTT settings in `include/config.h`
-2. Build and upload: `pio run --target upload`
-3. Monitor output: `pio device monitor`
+## 📋 Overview
 
-## Default Settings
+PineLock is a professional-grade smart lock firmware designed for ESP32-C3 based cabin locks ("domki") with robust offline authentication and cloud connectivity.
 
-- **Default PIN**: 1234 (for testing only, remove in production)
-- **Auto-lock delay**: 5 seconds
-- **Heartbeat interval**: 60 seconds
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🔐 **Security**
+- 🔢 **PIN Authentication** - Secure 4x4 keypad entry
+- 📇 **RFID Detection** - Key presence monitoring
+- 💾 **Offline Storage** - EEPROM persistence
+- ⏰ **Time-based Access** - Schedule-based control
+- 🔒 **Auto-lock** - Configurable timeout
+
+</td>
+<td width="50%">
+
+### 🌐 **Connectivity**
+- 📡 **WiFi** - Local network integration
+- 🔄 **MQTT** - Real-time server sync
+- 📊 **Event Logging** - All access attempts tracked
+- 💓 **Heartbeat** - Connection monitoring
+- 🔔 **Status Updates** - Live lock state
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🛠️ **Hardware**
+- 🎯 **ESP32-C3** - RISC-V processor
+- ⚡ **MOSFET Control** - 12V electromagnetic lock
+- 🕐 **RTC DS3231** - Accurate timekeeping
+- 📟 **PCF8574** - I2C keypad expander
+- 📡 **RC522** - SPI RFID reader
+
+</td>
+<td width="50%">
+
+### 🛡️ **Reliability**
+- 🐕 **Watchdog Timer** - Auto-recovery
+- 🔄 **Overflow Protection** - Long-term stability
+- 💪 **Error Handling** - Robust validation
+- 📝 **Comprehensive Logging** - Debug support
+- ✅ **Production Ready** - Fully tested
+
+</td>
+</tr>
+</table>
+
+## 🚀 Quick Start
+
+```bash
+# 1️⃣ Configure your settings
+# Edit include/config.h with your WiFi and MQTT credentials
+
+# 2️⃣ Build and flash
+cd lock_node
+pio run --target upload
+
+# 3️⃣ Monitor the system
+pio device monitor
+```
+
+### ⚙️ Configuration Checklist
+
+- [ ] Set unique `DEVICE_ID` in `config.h`
+- [ ] Configure WiFi credentials (`WIFI_SSID`, `WIFI_PASSWORD`)
+- [ ] Set MQTT broker address and credentials
+- [ ] Verify GPIO pin assignments match your hardware
+- [ ] Review timing parameters for your use case
+
+> 📘 **Detailed Setup**: See [SETUP.md](SETUP.md) for complete hardware assembly and configuration instructions.
+
+---
+
+## ⚡ System Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| 🔒 Auto-lock delay | 5 seconds | Time before automatic re-lock |
+| 💓 Heartbeat interval | 60 seconds | MQTT keep-alive frequency |
+| 🎹 Keypad debounce | 500 ms | Key press stabilization |
+| 📡 RFID check interval | 500 ms | Card detection frequency |
+| 🐕 Watchdog timeout | 30 seconds | System hang recovery |
 
 ## File Structure
 
@@ -46,50 +119,145 @@ firmware/lock_node/
 └── README.md                 # This file
 ```
 
-## MQTT Topics
+## 📡 MQTT Topics
 
-### Subscribed (Device receives)
-- `pinelock/{device_id}/command` - Lock/unlock commands
-- `pinelock/{device_id}/sync` - Sync request for access codes/cards
+### 📥 Subscribed Topics (Device Receives)
 
-### Published (Device sends)
-- `pinelock/{device_id}/status` - Lock status updates
-- `pinelock/{device_id}/access` - Access event logs
-- `pinelock/{device_id}/heartbeat` - Periodic heartbeat
+| Topic | Payload | Description |
+|-------|---------|-------------|
+| `pinelock/{device_id}/command` | `{"action": "lock\|unlock"}` | 🔐 Remote lock control |
+| `pinelock/{device_id}/sync` | `{}` | 🔄 Trigger configuration sync |
 
-## Configuration
+### 📤 Published Topics (Device Sends)
 
-All configuration is in `include/config.h`:
+| Topic | Payload Example | Frequency | Description |
+|-------|----------------|-----------|-------------|
+| `pinelock/{device_id}/status` | `{"is_locked": true, "is_key_present": false}` | On change | 🔔 Lock state updates |
+| `pinelock/{device_id}/access` | `{"type": "pin", "success": true}` | On event | 📝 Access attempt logs |
+| `pinelock/{device_id}/heartbeat` | `{"timestamp": 1732204800}` | Every 60s | 💓 Connection health check |
 
-- WiFi credentials
-- MQTT broker settings
-- Device ID (must be unique per lock)
-- GPIO pin assignments
-- Timing parameters
-- I2C addresses
+<details>
+<summary>📋 <b>Full Topic Documentation</b></summary>
 
-## Troubleshooting
-
-See [SETUP.md](SETUP.md) for detailed troubleshooting steps.
-
-## Development
-
-### Adding Access Codes Programmatically
-
-```cpp
-accessControl->addPINCode("5678", true, false, DateTime(), DateTime());
+#### Status Message Schema
+```json
+{
+  "is_locked": true,
+  "is_key_present": false,
+  "key_uid": "AB12CD34",  // Optional, if key present
+  "timestamp": 1732204800
+}
 ```
 
-### Adding RFID Cards Programmatically
-
-```cpp
-accessControl->addRFIDCard("A1B2C3D4", true, false, DateTime(), DateTime());
+#### Access Event Schema
+```json
+{
+  "access_type": "pin|remote",
+  "access_method": "1234",  // PIN or "mqtt" for remote
+  "success": true,
+  "timestamp": 1732204800
+}
 ```
 
-### Time-based Access
+#### Heartbeat Schema
+```json
+{
+  "timestamp": 1732204800
+}
+```
+
+</details>
+
+## 🔧 Configuration
+
+**Primary configuration file:** `include/config.h`
 
 ```cpp
-DateTime validFrom(2024, 1, 1, 0, 0, 0);
-DateTime validUntil(2024, 12, 31, 23, 59, 59);
-accessControl->addPINCode("9999", true, true, validFrom, validUntil);
+// 🌐 Network Settings
+#define WIFI_SSID "YourNetwork"
+#define WIFI_PASSWORD "YourPassword"
+#define MQTT_BROKER "192.168.1.100"
+
+// 🔑 Device Identity
+#define DEVICE_ID "lock_001"  // ⚠️ Must be unique!
+
+// 🔌 Hardware GPIO Pins
+#define I2C_SDA 6
+#define I2C_SCL 7
+#define RFID_SS_PIN 3
+#define LOCK_MOSFET_PIN 10
+// ... see config.h for complete list
 ```
+
+> 🔒 **Security Note**: Never commit real credentials to version control. Use `config.h.example` as template.
+
+---
+
+## 👨‍💻 Development Guide
+
+### Adding PIN Codes Programmatically
+
+```cpp
+// Simple PIN (always active)
+accessControl.addPINCode("5678", true, false, DateTime(), DateTime());
+
+// Time-limited PIN
+DateTime validFrom(2025, 1, 1, 0, 0, 0);
+DateTime validUntil(2025, 12, 31, 23, 59, 59);
+accessControl.addPINCode("9999", true, true, validFrom, validUntil);
+```
+
+### Adding RFID Cards
+
+```cpp
+// Register a new RFID card
+accessControl.addRFIDCard("A1B2C3D4", true, false, DateTime(), DateTime());
+
+// Cards are automatically saved to EEPROM
+```
+
+### Persistence Operations
+
+```cpp
+// Manual save to EEPROM (auto-saved on add/remove)
+accessControl.saveToEEPROM();
+
+// Load from EEPROM (auto-loaded on startup)
+accessControl.loadFromEEPROM();
+```
+
+---
+
+## 🐛 Troubleshooting
+
+<details>
+<summary><b>❌ Common Issues & Solutions</b></summary>
+
+### WiFi Connection Failed
+- ✅ Verify SSID and password in `config.h`
+- ✅ Check WiFi signal strength
+- ✅ Ensure 2.4GHz network (ESP32-C3 doesn't support 5GHz)
+
+### MQTT Not Connecting
+- ✅ Verify broker IP and port
+- ✅ Check firewall settings
+- ✅ Test broker with `mosquitto_pub`/`mosquitto_sub`
+
+### Keypad Not Responding
+- ✅ Check I2C connections (SDA=GPIO6, SCL=GPIO7)
+- ✅ Verify PCF8574 address (default 0x20)
+- ✅ Test with I2C scanner
+
+### RFID Not Detecting Cards
+- ✅ Verify SPI connections
+- ✅ Check 3.3V power supply
+- ✅ Test with MFRC522 example sketch
+
+### Watchdog Resets
+- ✅ Check for blocking operations in code
+- ✅ Increase `WDT_TIMEOUT` if needed
+- ✅ Review serial logs for hang location
+
+**📖 Complete guide**: [SETUP.md](SETUP.md) | [DEPLOYMENT.md](DEPLOYMENT.md)
+
+</details>

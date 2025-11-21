@@ -87,8 +87,37 @@ Distributed access management for vacation cabins with one central server and sm
 4. **Run the server:**
    ```bash
    cd server
-   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ./start.sh
+   # Or manually:
+   # uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
+
+5. **Access Web UI:**
+   - Open browser: `http://localhost:8000/ui/login`
+   - Default login: `admin` / `admin` (change in `.env`!)
+   - See [server/WEB_UI.md](server/WEB_UI.md) for details
+
+## Web Interface
+
+PineLock includes a modern web UI designed to match the project branding:
+
+- 🔐 **Login page** - Secure authentication with PineLock logo
+- 🏠 **Dashboard** - Overview of all locks with real-time status
+- 🔐 **Lock management** - Add, configure, and control locks
+- 📊 **Statistics** - Monitor locked/unlocked/offline devices
+- 🔑 **Access control** - Manage PIN codes and RFID cards
+- 📈 **Access history** - Track all access events
+
+**Features:**
+- Responsive design (mobile & desktop)
+- Real-time status updates
+- Remote lock/unlock control
+- Forest green theme matching the logo
+- Auto-refresh every 30 seconds
+
+See [server/WEB_UI.md](server/WEB_UI.md) for complete documentation.
+
+**Preview:** Open [server/static/preview.html](server/static/preview.html) to see UI components.
 
 ### Firmware Setup
 

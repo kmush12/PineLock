@@ -6,6 +6,9 @@ AccessControl::AccessControl(RTC_DS3231* rtcInstance) {
     rfidCardCount = 0;
     clearPINCodes();
     clearRFIDCards();
+    
+    // Load saved data from EEPROM
+    loadFromEEPROM();
 }
 
 // PIN Code Management
@@ -23,6 +26,7 @@ bool AccessControl::addPINCode(const char* code, bool isActive, bool hasTimeLimi
             pinCodes[i].hasTimeLimit = hasTimeLimit;
             pinCodes[i].validFrom = validFrom;
             pinCodes[i].validUntil = validUntil;
+            saveToEEPROM();
             return true;
         }
     }
@@ -35,6 +39,7 @@ bool AccessControl::addPINCode(const char* code, bool isActive, bool hasTimeLimi
     pinCodes[pinCodeCount].validFrom = validFrom;
     pinCodes[pinCodeCount].validUntil = validUntil;
     pinCodeCount++;
+    saveToEEPROM();
     return true;
 }
 
@@ -46,6 +51,7 @@ bool AccessControl::removePINCode(const char* code) {
                 pinCodes[j] = pinCodes[j + 1];
             }
             pinCodeCount--;
+            saveToEEPROM();
             return true;
         }
     }
@@ -88,6 +94,7 @@ bool AccessControl::addRFIDCard(const char* uid, bool isActive, bool hasTimeLimi
             rfidCards[i].hasTimeLimit = hasTimeLimit;
             rfidCards[i].validFrom = validFrom;
             rfidCards[i].validUntil = validUntil;
+            saveToEEPROM();
             return true;
         }
     }
@@ -100,6 +107,7 @@ bool AccessControl::addRFIDCard(const char* uid, bool isActive, bool hasTimeLimi
     rfidCards[rfidCardCount].validFrom = validFrom;
     rfidCards[rfidCardCount].validUntil = validUntil;
     rfidCardCount++;
+    saveToEEPROM();
     return true;
 }
 
@@ -111,6 +119,7 @@ bool AccessControl::removeRFIDCard(const char* uid) {
                 rfidCards[j] = rfidCards[j + 1];
             }
             rfidCardCount--;
+            saveToEEPROM();
             return true;
         }
     }
@@ -152,4 +161,88 @@ bool AccessControl::isWithinValidTime(DateTime validFrom, DateTime validUntil) {
     }
     
     return false;
+}
+
+// EEPROM Persistence
+void AccessControl::saveToEEPROM() {
+    preferences.begin("access_ctrl", false);
+    
+    // Save PIN code count
+    preferences.putInt("pin_count", pinCodeCount);
+    
+    // Save each PIN code (simplified - only code and active status)
+    for (int i = 0; i < pinCodeCount; i++) {
+        String keyCode = "pin_c_" + String(i);
+        String keyActive = "pin_a_" + String(i);
+        preferences.putString(keyCode.c_str(), String(pinCodes[i].code));
+        preferences.putBool(keyActive.c_str(), pinCodes[i].isActive);
+    }
+    
+    // Save RFID card count
+    preferences.putInt("rfid_count", rfidCardCount);
+    
+    // Save each RFID card
+    for (int i = 0; i < rfidCardCount; i++) {
+        String keyUID = "rfid_u_" + String(i);
+        String keyActive = "rfid_a_" + String(i);
+        preferences.putString(keyUID.c_str(), String(rfidCards[i].uid));
+        preferences.putBool(keyActive.c_str(), rfidCards[i].isActive);
+    }
+    
+    preferences.end();
+    Serial.println("Access codes saved to EEPROM");
+}
+
+void AccessControl::loadFromEEPROM() {
+    preferences.begin("access_ctrl", true); // Read-only
+    
+    // Load PIN codes
+    int savedPinCount = preferences.getInt("pin_count", 0);
+    if (savedPinCount > 0 && savedPinCount <= MAX_PIN_CODES) {
+        pinCodeCount = 0;
+        for (int i = 0; i < savedPinCount; i++) {
+            String keyCode = "pin_c_" + String(i);
+            String keyActive = "pin_a_" + String(i);
+            
+            String code = preferences.getString(keyCode.c_str(), "");
+            bool isActive = preferences.getBool(keyActive.c_str(), false);
+            
+            if (code.length() > 0) {
+                strncpy(pinCodes[pinCodeCount].code, code.c_str(), PIN_LENGTH);
+                pinCodes[pinCodeCount].code[PIN_LENGTH] = '\0';
+                pinCodes[pinCodeCount].isActive = isActive;
+                pinCodes[pinCodeCount].hasTimeLimit = false;
+                pinCodeCount++;
+            }
+        }
+        Serial.print("Loaded ");
+        Serial.print(pinCodeCount);
+        Serial.println(" PIN codes from EEPROM");
+    }
+    
+    // Load RFID cards
+    int savedRfidCount = preferences.getInt("rfid_count", 0);
+    if (savedRfidCount > 0 && savedRfidCount <= MAX_RFID_CARDS) {
+        rfidCardCount = 0;
+        for (int i = 0; i < savedRfidCount; i++) {
+            String keyUID = "rfid_u_" + String(i);
+            String keyActive = "rfid_a_" + String(i);
+            
+            String uid = preferences.getString(keyUID.c_str(), "");
+            bool isActive = preferences.getBool(keyActive.c_str(), false);
+            
+            if (uid.length() > 0) {
+                strncpy(rfidCards[rfidCardCount].uid, uid.c_str(), sizeof(rfidCards[rfidCardCount].uid) - 1);
+                rfidCards[rfidCardCount].uid[sizeof(rfidCards[rfidCardCount].uid) - 1] = '\0';
+                rfidCards[rfidCardCount].isActive = isActive;
+                rfidCards[rfidCardCount].hasTimeLimit = false;
+                rfidCardCount++;
+            }
+        }
+        Serial.print("Loaded ");
+        Serial.print(rfidCardCount);
+        Serial.println(" RFID cards from EEPROM");
+    }
+    
+    preferences.end();
 }

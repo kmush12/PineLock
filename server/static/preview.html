@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PineLock UI Preview</title>
+    <style>
+        /* PineLock Web UI Styles - Inline for preview */
+        :root {
+            --forest-green: #1e5945;
+            --dark-green: #2d6f51;
+            --pine-green: #3a8660;
+            --white: #ffffff;
+            --cream: #f5f5dc;
+            --light-gray: #e8e8e8;
+            --medium-gray: #d0d0d0;
+            --dark-gray: #4a4a4a;
+            --success: #28a745;
+            --warning: #ffc107;
+            --error: #dc3545;
+            --shadow: rgba(30, 89, 69, 0.15);
+            --shadow-hover: rgba(30, 89, 69, 0.25);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--light-gray) 100%);
+            color: var(--dark-gray);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--forest-green);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 36px;
+        }
+
+        .preview-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .preview-section h2 {
+            color: var(--forest-green);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--pine-green);
+            padding-bottom: 10px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .logo-svg {
+            width: 150px;
+            height: 175px;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .color-swatch {
+            text-align: center;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 6px var(--shadow);
+        }
+
+        .color-box {
+            height: 80px;
+            border-radius: var(--border-radius);
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .stat-icon.green {
+            background: rgba(30, 89, 69, 0.1);
+            color: var(--forest-green);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--forest-green);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .lock-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .lock-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px var(--shadow-hover);
+            border-color: var(--pine-green);
+        }
+
+        .lock-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .lock-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: var(--cream);
+            color: var(--forest-green);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .lock-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--forest-green);
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+            background: var(--forest-green);
+            color: var(--white);
+        }
+
+        .btn:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow-hover);
+        }
+
+        .info-box {
+            background: var(--cream);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--pine-green);
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: var(--forest-green);
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: var(--light-gray);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--dark-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 PineLock Web UI - Preview</h1>
+
+        <!-- Logo Section -->
+        <div class="preview-section">
+            <h2>🎨 Logo & Branding</h2>
+            <div class="logo-container">
+                <svg class="logo-svg" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Pine tree base -->
+                    <polygon points="100,30 60,90 75,90" fill="#1e5945"/>
+                    <polygon points="100,30 140,90 125,90" fill="#2d6f51"/>
+                    
+                    <!-- Middle layer -->
+                    <polygon points="100,70 50,140 70,140" fill="#1e5945"/>
+                    <polygon points="100,70 150,140 130,140" fill="#2d6f51"/>
+                    
+                    <!-- Bottom layer -->
+                    <polygon points="100,110 40,190 65,190" fill="#1e5945"/>
+                    <polygon points="100,110 160,190 135,190" fill="#2d6f51"/>
+                    
+                    <!-- Trunk -->
+                    <rect x="85" y="190" width="30" height="50" fill="#1e5945"/>
+                    <rect x="100" y="190" width="15" height="50" fill="#2d6f51"/>
+                    
+                    <!-- Keyhole -->
+                    <circle cx="100" cy="120" r="22" fill="#f5f5dc"/>
+                    <path d="M 90,130 L 90,160 L 110,160 L 110,130 L 105,130 L 105,145 L 95,145 L 95,130 Z" fill="#f5f5dc"/>
+                </svg>
+                <p style="margin-top: 20px; color: var(--dark-gray);">
+                    <strong>Choinka z dziurką od klucza</strong><br>
+                    Symbolizuje bezpieczeństwo w naturalnym otoczeniu
+                </p>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="preview-section">
+            <h2>🎨 Paleta kolorów</h2>
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #1e5945;"></div>
+                    <strong>Forest Green</strong><br>
+                    <code>#1e5945</code><br>
+                    Główny kolor brandingowy
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #2d6f51;"></div>
+                    <strong>Dark Green</strong><br>
+                    <code>#2d6f51</code><br>
+                    Ciemniejszy odcień
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #3a8660;"></div>
+                    <strong>Pine Green</strong><br>
+                    <code>#3a8660</code><br>
+                    Akcenty
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #f5f5dc;"></div>
+                    <strong>Cream</strong><br>
+                    <code>#f5f5dc</code><br>
+                    Tło i akcenty
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="preview-section">
+            <h2>📊 Karty statystyk</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon green">🔐</div>
+                    <div>
+                        <div class="stat-label">Wszystkie domki</div>
+                        <div class="stat-value">12</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🔒</div>
+                    <div>
+                        <div class="stat-label">Zamknięte</div>
+                        <div class="stat-value">8</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lock Cards -->
+        <div class="preview-section">
+            <h2>🔐 Karty domków</h2>
+            
+            <div class="lock-card">
+                <div class="lock-card-header">
+                    <div class="lock-icon">🔒</div>
+                    <span class="status-badge">Zamknięty</span>
+                </div>
+                <div>
+                    <h3 class="lock-name">Domek nr 1</h3>
+                    <p style="color: var(--dark-gray);">📍 Mazury, jezioro Niegocin</p>
+                    <p style="color: var(--medium-gray); font-size: 12px; font-family: monospace; margin-top: 4px;">
+                        ID: LOCK001
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="preview-section">
+            <h2>ℹ️ Komponenty informacyjne</h2>
+            
+            <div class="info-box">
+                <h3>🚀 Jak uruchomić?</h3>
+                <p>1. Zainstaluj zależności: <code>pip install -r requirements.txt</code></p>
+                <p>2. Uruchom migrację (opcjonalnie): <code>python3 migrate_db.py</code></p>
+                <p>3. Uruchom serwer: <code>./start.sh</code></p>
+                <p>4. Otwórz: <code>http://localhost:8000/ui/login</code></p>
+            </div>
+
+            <div class="info-box" style="border-left-color: var(--warning);">
+                <h3>⚠️ Uwaga</h3>
+                <p>Zmień domyślne hasło przed wdrożeniem produkcyjnym!</p>
+                <p>Login: <code>admin</code> / Hasło: <code>admin</code></p>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="preview-section">
+            <h2>🎯 Przyciski i akcje</h2>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn">🔐 Zamknij domek</button>
+                <button class="btn">🔓 Otwórz domek</button>
+                <button class="btn">➕ Dodaj nowy</button>
+                <button class="btn">🔄 Odśwież</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 60px; padding: 20px; color: var(--dark-gray);">
+            <p><strong>🌲 PineLock</strong></p>
+            <p style="font-size: 14px; margin-top: 10px;">
+                System zarządzania dostępem do domków wakacyjnych
+            </p>
+            <p style="font-size: 12px; margin-top: 20px; opacity: 0.7;">
+                Secure your space. Protect what matters. © 2025
+            </p>
+        </div>
+    </div>
+</body>
+</html>

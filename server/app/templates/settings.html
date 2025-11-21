@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Ustawienia - PineLock{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+            <h2 class="sidebar-title">PineLock</h2>
+            <p class="sidebar-subtitle">System zarządzania</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+                <span class="nav-icon">🔐</span>
+                Domki
+            </a>
+            <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                <span class="nav-icon">🔢</span>
+                Kody PIN
+            </a>
+            <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                <span class="nav-icon">💳</span>
+                Karty RFID
+            </a>
+            <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                Historia dostępu
+            </a>
+            <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+                <span class="nav-icon">⚙️</span>
+                Ustawienia
+            </a>
+            <a href="/ui/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <span class="nav-icon">🚪</span>
+                Wyloguj się
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+<div class="content-header">
+    <div>
+        <h1>Ustawienia systemu</h1>
+        <p class="subtitle">Konfiguracja serwera PineLock</p>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">
+    {% if message == 'settings_saved' %}
+        Ustawienia zostały zapisane.
+    {% elif message == 'password_changed' %}
+        Hasło zostało zmienione.
+    {% else %}
+        {{ message }}
+    {% endif %}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-error">
+    {% if error == 'password_mismatch' %}
+        Hasła nie są identyczne.
+    {% elif error == 'invalid_credentials' %}
+        Nieprawidłowe obecne hasło.
+    {% else %}
+        {{ error }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- System Information -->
+<div class="card">
+    <div class="card-header">
+        <h2>Informacje o systemie</h2>
+    </div>
+    <div class="card-content">
+        <div class="settings-section">
+            <div class="setting-row">
+                <div class="setting-label">Wersja serwera</div>
+                <div class="setting-value"><code>{{ system_info.version }}</code></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Host API</div>
+                <div class="setting-value"><code>{{ system_info.api_host }}:{{ system_info.api_port }}</code></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Baza danych</div>
+                <div class="setting-value"><code>{{ system_info.database_url }}</code></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Zalogowany jako</div>
+                <div class="setting-value"><strong>{{ username }}</strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MQTT Configuration -->
+<div class="card">
+    <div class="card-header">
+        <h2>Konfiguracja MQTT</h2>
+    </div>
+    <div class="card-content">
+        <form method="POST" action="/ui/settings/mqtt">
+            <div class="settings-section">
+                <div class="form-group">
+                    <label for="mqtt-host">Adres brokera MQTT</label>
+                    <input type="text" id="mqtt-host" name="mqtt_host" class="form-control" 
+                           value="{{ mqtt_config.host }}" required>
+                    <small class="form-text">Domyślnie: localhost</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mqtt-port">Port</label>
+                    <input type="number" id="mqtt-port" name="mqtt_port" class="form-control" 
+                           value="{{ mqtt_config.port }}" min="1" max="65535" required>
+                    <small class="form-text">Domyślnie: 1883</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mqtt-username">Nazwa użytkownika</label>
+                    <input type="text" id="mqtt-username" name="mqtt_username" class="form-control" 
+                           value="{{ mqtt_config.username or '' }}" placeholder="Opcjonalne">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mqtt-password">Hasło</label>
+                    <input type="password" id="mqtt-password" name="mqtt_password" class="form-control" 
+                           placeholder="Opcjonalne">
+                    <small class="form-text">Pozostaw puste, aby nie zmieniać</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mqtt-topic-prefix">Prefiks tematów</label>
+                    <input type="text" id="mqtt-topic-prefix" name="mqtt_topic_prefix" class="form-control" 
+                           value="{{ mqtt_config.topic_prefix }}" required>
+                    <small class="form-text">Domyślnie: pinelock</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <div>
+                        <strong>Uwaga:</strong> Zmiana ustawień MQTT wymaga ponownego uruchomienia serwera. 
+                        Aktualne ustawienia są przechowywane w zmiennych środowiskowych lub pliku <code>.env</code>.
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="testMqttConnection()">Testuj połączenie</button>
+                    <button type="submit" class="btn-primary" disabled title="Edycja wymaga zapisania do pliku .env">
+                        Zapisz konfigurację MQTT
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Security Settings -->
+<div class="card">
+    <div class="card-header">
+        <h2>Bezpieczeństwo</h2>
+    </div>
+    <div class="card-content">
+        <form method="POST" action="/ui/settings/password">
+            <div class="settings-section">
+                <div class="form-group">
+                    <label for="current-password">Obecne hasło</label>
+                    <input type="password" id="current-password" name="current_password" 
+                           class="form-control" required autocomplete="current-password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-password">Nowe hasło</label>
+                    <input type="password" id="new-password" name="new_password" 
+                           class="form-control" required autocomplete="new-password" minlength="4">
+                    <small class="form-text">Minimum 4 znaki</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Potwierdź nowe hasło</label>
+                    <input type="password" id="confirm-password" name="confirm_password" 
+                           class="form-control" required autocomplete="new-password" minlength="4">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Zmień hasło</button>
+                </div>
+            </div>
+        </form>
+        
+        <hr style="margin: 30px 0;">
+        
+        <div class="settings-section">
+            <h3>Klucz sesji</h3>
+            <div class="setting-row">
+                <div class="setting-label">Session Secret Key</div>
+                <div class="setting-value">
+                    <code style="filter: blur(4px);">{{ system_info.session_secret_key }}</code>
+                    <small style="display: block; margin-top: 8px;">
+                        Klucz używany do szyfrowania sesji użytkowników. Zmień go w pliku <code>.env</code>.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Database Management -->
+<div class="card">
+    <div class="card-header">
+        <h2>Zarządzanie bazą danych</h2>
+    </div>
+    <div class="card-content">
+        <div class="settings-section">
+            <div class="setting-row">
+                <div class="setting-label">Liczba domków</div>
+                <div class="setting-value"><strong>{{ db_stats.locks_count }}</strong></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Liczba kodów PIN</div>
+                <div class="setting-value"><strong>{{ db_stats.codes_count }}</strong></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Liczba kart RFID</div>
+                <div class="setting-value"><strong>{{ db_stats.rfid_count }}</strong></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label">Liczba logów dostępu</div>
+                <div class="setting-value"><strong>{{ db_stats.logs_count }}</strong></div>
+            </div>
+            
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                    <strong>Operacje na bazie danych</strong><br>
+                    Tworzenie kopii zapasowej i czyszczenie bazy jest obecnie możliwe tylko z linii poleceń.
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" disabled title="Funkcja w przygotowaniu">
+                    Eksportuj bazę danych
+                </button>
+                <button type="button" class="btn-secondary" disabled title="Funkcja w przygotowaniu">
+                    Wyczyść stare logi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About -->
+<div class="card">
+    <div class="card-header">
+        <h2>O systemie PineLock</h2>
+    </div>
+    <div class="card-content">
+        <div style="padding: 20px;">
+            <h3 style="margin-top: 0;">PineLock - System zarządzania dostępem do domków</h3>
+            <p>
+                PineLock to kompleksowy system dostępu oparty o ESP32, FastAPI i MQTT, 
+                zaprojektowany do zarządzania zamkami elektronicznymi w domkach letniskowych, 
+                apartamentach i innych nieruchomościach.
+            </p>
+            
+            <h4>Funkcje:</h4>
+            <ul>
+                <li>Zdalne otwieranie i zamykanie zamków</li>
+                <li>Zarządzanie kodami PIN</li>
+                <li>Obsługa kart RFID (w przygotowaniu)</li>
+                <li>Historia dostępu i logi bezpieczeństwa</li>
+                <li>Komunikacja przez MQTT z urządzeniami ESP32</li>
+                <li>Panel administracyjny oparty o FastAPI</li>
+            </ul>
+            
+            <h4>Komponenty:</h4>
+            <ul>
+                <li><strong>Server</strong> - FastAPI + SQLite + MQTT Client</li>
+                <li><strong>Firmware</strong> - ESP32 + PlatformIO + MQTT</li>
+                <li><strong>Web UI</strong> - Jinja2 templates + responsive CSS</li>
+            </ul>
+            
+            <p style="margin-top: 20px; color: #666;">
+                Dokumentacja: <a href="https://github.com/yourusername/pinelock" target="_blank">GitHub</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function testMqttConnection() {
+    // TODO: Implement MQTT connection test
+    alert('Test połączenia MQTT będzie dostępny wkrótce.\n\nSprawdź logi serwera, aby zweryfikować połączenie.');
+}
+</script>
+
+<style>
+.settings-section {
+    padding: 20px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.setting-row:last-child {
+    border-bottom: none;
+}
+
+.setting-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.setting-value {
+    color: #666;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+}
+</style>
+    </main>
+</div>
+{% endblock %}

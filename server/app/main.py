@@ -55,8 +55,7 @@ app = FastAPI(
 
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key)
 static_dir = Path(__file__).resolve().parent / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Include routes
 app.include_router(api_router, prefix="/api/v1")

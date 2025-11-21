@@ -64,11 +64,10 @@ body {
     margin-bottom: 30px;
 }
 
-.logo-img {
+.logo-svg {
     width: 120px;
-    height: auto;
+    height: 140px;
     margin: 0 auto;
-    display: block;
 }
 
 .login-title {
@@ -220,9 +219,8 @@ body {
 
 .sidebar-logo {
     width: 60px;
-    height: auto;
+    height: 70px;
     margin: 0 auto 15px;
-    display: block;
 }
 
 .sidebar-title {

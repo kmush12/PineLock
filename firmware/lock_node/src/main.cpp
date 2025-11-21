@@ -6,9 +6,13 @@
 #include <RTClib.h>
 #include <ArduinoJson.h>
 #include <Adafruit_PCF8574.h>
+#include <esp_task_wdt.h>
 
 #include "config.h"
 #include "access_control.h"
+
+// Watchdog timeout in seconds
+#define WDT_TIMEOUT 30
 
 // WiFi and MQTT clients
 WiFiClient wifiClient;
@@ -20,7 +24,7 @@ RTC_DS3231 rtc;
 Adafruit_PCF8574 pcf8574;
 
 // Access control
-AccessControl* accessControl;
+AccessControl accessControl(&rtc);
 
 // Keypad configuration
 const char KEYPAD_KEYS[KEYPAD_ROWS][KEYPAD_COLS] = {
@@ -60,6 +64,11 @@ void setup() {
     Serial.println("\n\n=== PineLock Firmware ===");
     Serial.println("Device ID: " + String(DEVICE_ID));
     
+    // Configure watchdog timer
+    esp_task_wdt_init(WDT_TIMEOUT, true);
+    esp_task_wdt_add(NULL);
+    Serial.println("Watchdog configured");
+    
     // Initialize hardware
     setupHardware();
     
@@ -73,6 +82,9 @@ void setup() {
 }
 
 void loop() {
+    // Reset watchdog
+    esp_task_wdt_reset();
+    
     // Maintain MQTT connection
     if (!mqttClient.connected()) {
         reconnectMQTT();
@@ -86,14 +98,17 @@ void loop() {
     handleRFID();
     
     // Send periodic heartbeat
-    if (millis() - lastHeartbeat > HEARTBEAT_INTERVAL) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastHeartbeat > HEARTBEAT_INTERVAL || currentMillis < lastHeartbeat) {
         sendHeartbeat();
-        lastHeartbeat = millis();
+        lastHeartbeat = currentMillis;
     }
     
-    // Auto-lock after duration
-    if (!isLocked && lockOpenTime > 0 && millis() - lockOpenTime > LOCK_DURATION) {
-        controlLock(true);
+    // Auto-lock after duration (with overflow protection)
+    if (!isLocked && lockOpenTime > 0) {
+        if (currentMillis - lockOpenTime > LOCK_DURATION || currentMillis < lockOpenTime) {
+            controlLock(true);
+        }
     }
     
     delay(50);
@@ -148,8 +163,8 @@ void setupHardware() {
         }
     }
     
-    // Initialize RFID
-    SPI.begin();
+    // Initialize RFID with custom SPI pins
+    SPI.begin(RFID_SCK_PIN, RFID_MISO_PIN, RFID_MOSI_PIN, RFID_SS_PIN);
     rfid.PCD_Init();
     Serial.println("RFID initialized");
     
@@ -157,13 +172,8 @@ void setupHardware() {
     pinMode(LOCK_MOSFET_PIN, OUTPUT);
     digitalWrite(LOCK_MOSFET_PIN, LOW); // Locked
     
-    // Initialize access control
-    accessControl = new AccessControl(&rtc);
-    
-    // Add default PIN for testing (remove in production)
-    accessControl->addPINCode("1234", true, false, DateTime(), DateTime());
-    
     Serial.println("Hardware initialization complete");
+    Serial.println("WARNING: No default PIN configured. Add PINs via MQTT.");
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -192,7 +202,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     
     // Handle different message types
     if (messageType == "command") {
-        String action = doc["action"];
+        if (!doc.containsKey("action")) {
+            Serial.println("Error: Missing 'action' field in command");
+            return;
+        }
+        
+        String action = doc["action"].as<String>();
         Serial.print("Received command: ");
         Serial.println(action);
         
@@ -202,6 +217,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         } else if (action == "unlock") {
             controlLock(false);
             sendAccessEvent("remote", "mqtt", true);
+        } else {
+            Serial.println("Unknown command action: " + action);
         }
     } else if (messageType == "sync") {
         Serial.println("Sync request received (not yet implemented)");
@@ -323,30 +340,48 @@ void sendKeyStatusUpdate(bool keyPresent, String cardUID) {
 
 void handleKeypad() {
     char key = readKeypad();
+    unsigned long currentMillis = millis();
     
     if (key != '\0' && key != lastKey) {
         Serial.print("Key pressed: ");
         Serial.println(key);
         lastKey = key;
-        lastKeyTime = millis();
+        lastKeyTime = currentMillis;
         
         processPINEntry(key);
     }
     
-    // Clear last key after timeout to allow repeat presses
-    if (millis() - lastKeyTime > 500) {
+    // Clear last key after timeout to allow repeat presses (with overflow protection)
+    if (currentMillis - lastKeyTime > KEYPAD_DEBOUNCE_MS || currentMillis < lastKeyTime) {
         lastKey = '\0';
     }
 }
 
 char readKeypad() {
-    // Read keypad matrix through PCF8574
-    // This is a simplified implementation
-    // In a real implementation, you'd scan the matrix properly
+    // Scan keypad matrix through PCF8574
+    // PCF8574 pins: P0-P3 = Rows, P4-P7 = Columns
     
-    // For now, return '\0' to indicate no key pressed
-    // TODO: Implement proper matrix scanning
-    return '\0';
+    for (int col = 0; col < KEYPAD_COLS; col++) {
+        // Set all columns high (via pullups)
+        for (int c = 0; c < KEYPAD_COLS; c++) {
+            pcf8574.digitalWrite(c + 4, HIGH);
+        }
+        
+        // Set current column low
+        pcf8574.digitalWrite(col + 4, LOW);
+        
+        delay(5); // Small delay for signal stabilization
+        
+        // Check all rows
+        for (int row = 0; row < KEYPAD_ROWS; row++) {
+            if (pcf8574.digitalRead(row) == LOW) {
+                // Key pressed at this row/col
+                return KEYPAD_KEYS[row][col];
+            }
+        }
+    }
+    
+    return '\0'; // No key pressed
 }
 
 void processPINEntry(char key) {
@@ -356,7 +391,7 @@ void processPINEntry(char key) {
             Serial.print("Validating PIN: ");
             Serial.println(currentPIN);
             
-            bool valid = accessControl->validatePIN(currentPIN.c_str());
+            bool valid = accessControl.validatePIN(currentPIN.c_str());
             
             if (valid) {
                 Serial.println("PIN valid! Unlocking...");
@@ -374,7 +409,7 @@ void processPINEntry(char key) {
         currentPIN = "";
         Serial.println("PIN cleared");
     } else if (key >= '0' && key <= '9') {
-        // Add digit to PIN
+        // Add digit to PIN (max 10 digits)
         if (currentPIN.length() < 10) {
             currentPIN += key;
         }
@@ -384,12 +419,13 @@ void processPINEntry(char key) {
 void handleRFID() {
     static bool lastKeyPresent = false;
     static unsigned long lastRFIDCheck = 0;
+    unsigned long currentMillis = millis();
 
-    // Check RFID presence every 500ms to avoid spam
-    if (millis() - lastRFIDCheck < 500) {
+    // Check RFID presence every 500ms to avoid spam (with overflow protection)
+    if (currentMillis - lastRFIDCheck < RFID_CHECK_INTERVAL_MS && currentMillis >= lastRFIDCheck) {
         return;
     }
-    lastRFIDCheck = millis();
+    lastRFIDCheck = currentMillis;
 
     // Check if a card is present
     bool keyPresent = rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial();
@@ -404,7 +440,7 @@ void handleRFID() {
             Serial.println(cardUID);
 
             // Check if this is a registered key
-            bool valid = accessControl->validateRFID(cardUID.c_str());
+            bool valid = accessControl.validateRFID(cardUID.c_str());
             if (valid) {
                 Serial.println("Valid key present in box");
                 sendKeyStatusUpdate(true, cardUID.c_str());

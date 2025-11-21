@@ -7,33 +7,48 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+            <svg class="sidebar-logo" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="100,30 60,90 75,90" fill="#3a8660"/>
+                <polygon points="100,30 140,90 125,90" fill="#4a9670"/>
+                <polygon points="100,70 50,140 70,140" fill="#3a8660"/>
+                <polygon points="100,70 150,140 130,140" fill="#4a9670"/>
+                <polygon points="100,110 40,190 65,190" fill="#3a8660"/>
+                <polygon points="100,110 160,190 135,190" fill="#4a9670"/>
+                <rect x="85" y="190" width="30" height="50" fill="#3a8660"/>
+                <rect x="100" y="190" width="15" height="50" fill="#4a9670"/>
+                <circle cx="100" cy="120" r="22" fill="#f5f5dc"/>
+                <path d="M 90,130 L 90,160 L 110,160 L 110,130 L 105,130 L 105,145 L 95,145 L 95,130 Z" fill="#f5f5dc"/>
+            </svg>
             <h2 class="sidebar-title">PineLock</h2>
             <p class="sidebar-subtitle">System zarządzania</p>
         </div>
         
         <nav class="sidebar-nav">
-            <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+            <a href="/dashboard" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                Panel główny
+            </a>
+            <a href="/locks" class="nav-item active">
                 <span class="nav-icon">🔐</span>
                 Domki
             </a>
-            <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+            <a href="/access-codes" class="nav-item">
                 <span class="nav-icon">🔢</span>
                 Kody PIN
             </a>
-            <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
-                <span class="nav-icon">💳</span>
+            <a href="/rfid-cards" class="nav-item">
+                <span class="nav-icon">📇</span>
                 Karty RFID
             </a>
-            <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
-                <span class="nav-icon">📋</span>
+            <a href="/access-logs" class="nav-item">
+                <span class="nav-icon">📊</span>
                 Historia dostępu
             </a>
-            <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+            <a href="/settings" class="nav-item">
                 <span class="nav-icon">⚙️</span>
                 Ustawienia
             </a>
-            <a href="/ui/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <a href="/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                 <span class="nav-icon">🚪</span>
                 Wyloguj się
             </a>
@@ -45,7 +60,7 @@
         <!-- Header -->
         <div class="header">
             <div>
-                <a href="/ui/locks" style="color: var(--pine-green); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 10px;">
+                <a href="/locks" style="color: var(--pine-green); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 10px;">
                     ← Powrót do listy
                 </a>
                 <h1 class="header-title">➕ Dodaj nowy domek</h1>
@@ -136,7 +151,7 @@
                     <button type="submit" class="btn btn-primary">
                         ✅ Dodaj domek
                     </button>
-                    <a href="/ui/locks" class="btn" style="background: var(--light-gray); color: var(--dark-gray);">
+                    <a href="/locks" class="btn" style="background: var(--light-gray); color: var(--dark-gray);">
                         ❌ Anuluj
                     </a>
                 </div>

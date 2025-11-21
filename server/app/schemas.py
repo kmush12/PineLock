@@ -8,6 +8,7 @@ class LockBase(BaseModel):
     device_id: str
     name: str
     location: Optional[str] = None
+    description: Optional[str] = None
 
 
 class LockCreate(LockBase):
@@ -17,6 +18,7 @@ class LockCreate(LockBase):
 class LockUpdate(BaseModel):
     name: Optional[str] = None
     location: Optional[str] = None
+    description: Optional[str] = None
 
 
 class LockResponse(LockBase):

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Karty RFID - PineLock{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', path='/logo.png') }}" alt="PineLock" class="sidebar-logo">
+            <h2 class="sidebar-title">PineLock</h2>
+            <p class="sidebar-subtitle">System zarządzania</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/ui/locks" class="nav-item {% if active_page == 'domki' %}active{% endif %}">
+                <span class="nav-icon">🔐</span>
+                Domki
+            </a>
+            <a href="/ui/access-codes" class="nav-item {% if active_page == 'access-codes' %}active{% endif %}">
+                <span class="nav-icon">🔢</span>
+                Kody PIN
+            </a>
+            <a href="/ui/rfid-cards" class="nav-item {% if active_page == 'rfid-cards' %}active{% endif %}">
+                <span class="nav-icon">💳</span>
+                Karty RFID
+            </a>
+            <a href="/ui/access-logs" class="nav-item {% if active_page == 'access-logs' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                Historia dostępu
+            </a>
+            <a href="/ui/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+                <span class="nav-icon">⚙️</span>
+                Ustawienia
+            </a>
+            <a href="/ui/logout" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <span class="nav-icon">🚪</span>
+                Wyloguj się
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+<div class="content-header">
+    <div>
+        <h1>Karty RFID</h1>
+        <p class="subtitle">Zarządzaj dostępem przez karty RFID (wkrótce)</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn-primary" disabled title="Funkcja w przygotowaniu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Dodaj kartę
+        </button>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<!-- Info Banner -->
+<div class="alert alert-info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+    <div>
+        <strong>Funkcja w przygotowaniu</strong><br>
+        System obsługi kart RFID jest obecnie w fazie rozwoju. W przyszłości będzie możliwe:
+        <ul style="margin-top: 8px; margin-bottom: 0;">
+            <li>Dodawanie i usuwanie kart RFID</li>
+            <li>Przypisywanie kart do domków</li>
+            <li>Określanie okresu ważności kart</li>
+            <li>Śledzenie użycia kart w logach dostępu</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Stats Cards (placeholders) -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Wszystkie karty</div>
+        <div class="stat-value">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Aktywne</div>
+        <div class="stat-value stat-success">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Wygasłe</div>
+        <div class="stat-value stat-warning">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Domki z kartami</div>
+        <div class="stat-value">0</div>
+    </div>
+</div>
+
+<!-- RFID Cards Table (placeholder) -->
+<div class="card">
+    <div class="card-header">
+        <h2>Lista kart RFID</h2>
+    </div>
+    <div class="card-content">
+        <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            <h3>Brak kart RFID</h3>
+            <p>System obsługi kart RFID jest w przygotowaniu.</p>
+            <p>Ta funkcjonalność będzie dostępna w przyszłej wersji.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Placeholder for future implementation -->
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+        <h2>Planowane funkcje</h2>
+    </div>
+    <div class="card-content">
+        <div style="padding: 20px;">
+            <h3 style="margin-top: 0;">Integracja z czytnikiem RFID</h3>
+            <p>Aby używać kart RFID z systemem PineLock, potrzebne będzie:</p>
+            <ul>
+                <li><strong>Czytnik RFID</strong> - moduł RC522 lub PN532 podłączony do ESP32</li>
+                <li><strong>Aktualizacja firmware</strong> - dodanie obsługi protokołu RFID w urządzeniu</li>
+                <li><strong>Rejestracja kart</strong> - możliwość nauki nowych kart przez system</li>
+                <li><strong>Synchronizacja</strong> - przekazywanie listy autoryzowanych kart przez MQTT</li>
+            </ul>
+            
+            <h3>Schemat działania</h3>
+            <ol>
+                <li>Administrator dodaje kartę RFID w panelu (przypisuje do domku)</li>
+                <li>Serwer wysyła zaktualizowaną listę kart do urządzenia przez MQTT</li>
+                <li>Urządzenie zapisuje karty w pamięci ESP32</li>
+                <li>Przy przyłożeniu karty, czytnik sprawdza UID z listą autoryzowanych kart</li>
+                <li>Jeśli karta jest autoryzowana i aktywna, zamek się otwiera</li>
+                <li>Zdarzenie dostępu jest rejestrowane w logach</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+    </main>
+</div>
+{% endblock %}

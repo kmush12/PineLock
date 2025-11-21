@@ -23,6 +23,9 @@
 // SPI for RC522 RFID
 #define RFID_SS_PIN 3
 #define RFID_RST_PIN 2
+#define RFID_MISO_PIN 4
+#define RFID_MOSI_PIN 5
+#define RFID_SCK_PIN 8
 
 // Lock Control
 #define LOCK_MOSFET_PIN 10  // GPIO pin for MOSFET control
@@ -36,6 +39,8 @@
 #define HEARTBEAT_INTERVAL 60000  // Send heartbeat every 60 seconds
 #define LOCK_DURATION 5000         // Keep lock open for 5 seconds
 #define MQTT_RECONNECT_DELAY 5000  // Wait 5 seconds before MQTT reconnect
+#define KEYPAD_DEBOUNCE_MS 500     // Debounce time for keypad
+#define RFID_CHECK_INTERVAL_MS 500 // RFID check interval
 
 // Access Control
 #define MAX_PIN_CODES 50
