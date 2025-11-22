@@ -25,6 +25,28 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
+# Setup MQTT Broker (Mosquitto)
+echo "Checking MQTT Broker (Mosquitto)..."
+if ! command -v mosquitto &> /dev/null; then
+    echo "📡 Mosquitto not found. Installing..."
+    if [ -f "../setup_mqtt.sh" ]; then
+        bash ../setup_mqtt.sh
+    else
+        sudo apt-get update
+        sudo apt-get install -y mosquitto mosquitto-clients
+        sudo systemctl enable mosquitto
+        sudo systemctl start mosquitto
+    fi
+    echo "✅ Mosquitto installed and started"
+else
+    # Check if mosquitto is running
+    if ! systemctl is-active --quiet mosquitto; then
+        echo "🔧 Starting Mosquitto..."
+        sudo systemctl start mosquitto
+    fi
+    echo "✅ Mosquitto is running"
+fi
+
 # Resolve host/port from configuration
 API_HOST=$(python3 - <<'PY'
 from app.config import settings

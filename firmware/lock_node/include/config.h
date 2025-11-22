@@ -2,18 +2,18 @@
 #define CONFIG_H
 
 // WiFi Configuration - SET THESE BEFORE DEPLOYMENT!
-#define WIFI_SSID ""          // Your WiFi network name
-#define WIFI_PASSWORD ""      // Your WiFi password
+#define WIFI_SSID "Orange_Swiatlowod_DDC0"          // Your WiFi network name
+#define WIFI_PASSWORD "M3WGS27SRMY6"      // Your WiFi password
 
 // MQTT Configuration - SET THESE BEFORE DEPLOYMENT!
-#define MQTT_BROKER ""        // IP address of MQTT broker (e.g., "192.168.1.100")
+#define MQTT_BROKER "192.168.1.13"        // IP address of MQTT broker (e.g., "192.168.1.100")
 #define MQTT_PORT 1883
 #define MQTT_USERNAME ""      // MQTT username (leave empty if no auth)
 #define MQTT_PASSWORD ""      // MQTT password (leave empty if no auth)
 #define MQTT_TOPIC_PREFIX "pinelock"
 
 // Device Configuration - SET UNIQUE ID FOR EACH LOCK!
-#define DEVICE_ID "lock_001"  // Unique identifier for this lock device
+#define DEVICE_ID "domek_1"  // Unique identifier for this lock device
 
 // Hardware Pin Configuration
 // I2C for PCF8574 (Keypad) and DS3231 (RTC)
