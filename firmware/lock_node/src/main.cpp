@@ -127,6 +127,10 @@ void loop() {
     delay(50);
 }
 
+// Hardware flags
+bool pcf8574Found = false;
+bool rtcFound = false;
+
 void setupWiFi() {
     Serial.print("Connecting to WiFi: ");
     Serial.println(WIFI_SSID);
@@ -135,6 +139,7 @@ void setupWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
     while (WiFi.status() != WL_CONNECTED) {
+        esp_task_wdt_reset(); // Feed watchdog during WiFi connection
         delay(500);
         Serial.print(".");
     }
@@ -157,8 +162,10 @@ void setupHardware() {
     // Initialize PCF8574 for keypad
     if (!pcf8574.begin(PCF8574_ADDRESS, &Wire)) {
         Serial.println("ERROR: PCF8574 not found!");
+        pcf8574Found = false;
     } else {
         Serial.println("PCF8574 initialized");
+        pcf8574Found = true;
         // Configure all pins as inputs with pullups
         for (int i = 0; i < 8; i++) {
             pcf8574.pinMode(i, INPUT_PULLUP);
@@ -168,8 +175,10 @@ void setupHardware() {
     // Initialize RTC
     if (!rtc.begin()) {
         Serial.println("ERROR: RTC not found!");
+        rtcFound = false;
     } else {
         Serial.println("RTC initialized");
+        rtcFound = true;
         if (rtc.lostPower()) {
             Serial.println("RTC lost power, setting time to compile time");
             rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -250,9 +259,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 void reconnectMQTT() {
     while (!mqttClient.connected()) {
+        esp_task_wdt_reset(); // Feed the watchdog!
         Serial.print("Attempting MQTT connection...");
         
         String clientId = "PineLock-" + String(DEVICE_ID);
+        
+        // Set keepalive before connecting
+        mqttClient.setKeepAlive(120); // 2 minutes keepalive
         
         bool connected;
         if (strlen(MQTT_USERNAME) > 0) {
@@ -279,7 +292,12 @@ void reconnectMQTT() {
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
             Serial.println(" retrying in 5 seconds");
-            delay(MQTT_RECONNECT_DELAY);
+            // Wait 5 seconds but keep feeding watchdog
+            unsigned long startWait = millis();
+            while (millis() - startWait < MQTT_RECONNECT_DELAY) {
+                esp_task_wdt_reset();
+                delay(100);
+            }
         }
     }
 }
@@ -291,7 +309,12 @@ void sendHeartbeat() {
     
     String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/heartbeat";
     StaticJsonDocument<128> doc;
-    doc["timestamp"] = rtc.now().unixtime();
+    
+    if (rtcFound) {
+        doc["timestamp"] = rtc.now().unixtime();
+    } else {
+        doc["timestamp"] = millis() / 1000; // Fallback to uptime
+    }
     
     char buffer[128];
     serializeJson(doc, buffer);
@@ -310,7 +333,12 @@ void sendAccessEvent(const char* accessType, const char* method, bool success) {
     doc["access_type"] = accessType;
     doc["access_method"] = method;
     doc["success"] = success;
-    doc["timestamp"] = rtc.now().unixtime();
+    
+    if (rtcFound) {
+        doc["timestamp"] = rtc.now().unixtime();
+    } else {
+        doc["timestamp"] = millis() / 1000;
+    }
     
     char buffer[256];
     serializeJson(doc, buffer);
@@ -329,7 +357,12 @@ void sendStatusUpdate() {
     StaticJsonDocument<128> doc;
     doc["is_locked"] = isLocked;
     doc["is_key_present"] = false; // Will be updated by RFID detection
-    doc["timestamp"] = rtc.now().unixtime();
+    
+    if (rtcFound) {
+        doc["timestamp"] = rtc.now().unixtime();
+    } else {
+        doc["timestamp"] = millis() / 1000;
+    }
 
     char buffer[128];
     serializeJson(doc, buffer);
@@ -350,7 +383,12 @@ void sendKeyStatusUpdate(bool keyPresent, String cardUID) {
     if (keyPresent && cardUID.length() > 0) {
         doc["key_uid"] = cardUID;
     }
-    doc["timestamp"] = rtc.now().unixtime();
+    
+    if (rtcFound) {
+        doc["timestamp"] = rtc.now().unixtime();
+    } else {
+        doc["timestamp"] = millis() / 1000;
+    }
 
     char buffer[256];
     serializeJson(doc, buffer);
@@ -380,6 +418,8 @@ void handleKeypad() {
 }
 
 char readKeypad() {
+    if (!pcf8574Found) return '\0';
+
     // Scan keypad matrix through PCF8574
     // PCF8574 pins: P0-P3 = Rows, P4-P7 = Columns
     
