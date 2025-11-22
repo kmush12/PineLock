@@ -27,15 +27,25 @@
 // Lock Control
 #define LOCK_MOSFET_PIN 10  // GPIO pin for MOSFET control
 
-// Keypad Configuration (PCF8574)
+// Buzzer
+#define BUZZER_PIN 1  // GPIO pin for buzzer
+
+// Vibration Sensor (Waveshare 9536)
+#define VIBRATION_SENSOR_PIN 9  // GPIO pin for vibration detection
+
+// Keypad Configuration (PCF8574) - MOD-01681 12-key keypad
 #define PCF8574_ADDRESS 0x20
 #define KEYPAD_ROWS 4
-#define KEYPAD_COLS 4
+#define KEYPAD_COLS 3
 
 // Timing Configuration
 #define HEARTBEAT_INTERVAL 60000  // Send heartbeat every 60 seconds
 #define LOCK_DURATION 5000         // Keep lock open for 5 seconds
 #define MQTT_RECONNECT_DELAY 5000  // Wait 5 seconds before MQTT reconnect
+#define KEYPAD_DEBOUNCE_MS 500     // Debounce time for keypad
+#define RFID_CHECK_INTERVAL_MS 500 // RFID check interval
+#define BUZZER_WRONG_PIN_DURATION 1000  // Buzzer beep for 1 second on wrong PIN
+#define VIBRATION_DEBOUNCE_MS 200  // Debounce time for vibration sensor
 
 // Access Control
 #define MAX_PIN_CODES 50

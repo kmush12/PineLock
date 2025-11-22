@@ -26,12 +26,13 @@ Adafruit_PCF8574 pcf8574;
 // Access control
 AccessControl accessControl(&rtc);
 
-// Keypad configuration
+// Keypad configuration - MOD-01681 (3x4 matrix, 12 keys)
+// Column order matches PCF8574 pins: P4(middle), P5(left), P6(right)
 const char KEYPAD_KEYS[KEYPAD_ROWS][KEYPAD_COLS] = {
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'},
-    {'*', '0', '#', 'D'}
+    {'2', '1', '3'},  // Row 1 (P0): middle, left, right
+    {'5', '4', '6'},  // Row 2 (P1): middle, left, right
+    {'8', '7', '9'},  // Row 3 (P2): middle, left, right
+    {'0', '*', '#'}   // Row 4 (P3): middle, left, right
 };
 
 // State variables
@@ -41,6 +42,9 @@ unsigned long lockOpenTime = 0;
 String currentPIN = "";
 char lastKey = '\0';
 unsigned long lastKeyTime = 0;
+unsigned long buzzerStopTime = 0;
+bool buzzerActive = false;
+unsigned long lastVibrationTime = 0;
 
 // Function declarations
 void setupWiFi();
@@ -54,9 +58,12 @@ void sendStatusUpdate();
 void sendKeyStatusUpdate(bool keyPresent, String cardUID);
 void handleKeypad();
 void handleRFID();
+void handleVibration();
 void controlLock(bool lock);
 char readKeypad();
 void processPINEntry(char key);
+void activateBuzzer(unsigned long duration);
+void handleBuzzer();
 String getCardUID(MFRC522::Uid* uid);
 
 void setup() {
@@ -96,6 +103,12 @@ void loop() {
     
     // Handle RFID key presence detection
     handleRFID();
+    
+    // Handle vibration detection
+    handleVibration();
+    
+    // Handle buzzer
+    handleBuzzer();
     
     // Send periodic heartbeat
     unsigned long currentMillis = millis();
@@ -171,6 +184,15 @@ void setupHardware() {
     // Initialize lock control pin
     pinMode(LOCK_MOSFET_PIN, OUTPUT);
     digitalWrite(LOCK_MOSFET_PIN, LOW); // Locked
+    
+    // Initialize buzzer pin
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW); // Off
+    Serial.println("Buzzer initialized");
+    
+    // Initialize vibration sensor pin
+    pinMode(VIBRATION_SENSOR_PIN, INPUT_PULLUP);
+    Serial.println("Vibration sensor initialized");
     
     Serial.println("Hardware initialization complete");
     Serial.println("WARNING: No default PIN configured. Add PINs via MQTT.");
@@ -399,6 +421,7 @@ void processPINEntry(char key) {
                 sendAccessEvent("pin", currentPIN.c_str(), true);
             } else {
                 Serial.println("PIN invalid!");
+                activateBuzzer(BUZZER_WRONG_PIN_DURATION);
                 sendAccessEvent("pin", currentPIN.c_str(), false);
             }
             
@@ -485,4 +508,56 @@ void controlLock(bool lock) {
     }
     
     sendStatusUpdate();
+}
+
+void activateBuzzer(unsigned long duration) {
+    buzzerActive = true;
+    buzzerStopTime = millis() + duration;
+    digitalWrite(BUZZER_PIN, HIGH);
+    Serial.println("Buzzer activated");
+}
+
+void handleBuzzer() {
+    if (buzzerActive) {
+        unsigned long currentMillis = millis();
+        if (currentMillis >= buzzerStopTime || currentMillis < buzzerStopTime - BUZZER_WRONG_PIN_DURATION - 1000) {
+            digitalWrite(BUZZER_PIN, LOW);
+            buzzerActive = false;
+            Serial.println("Buzzer deactivated");
+        }
+    }
+}
+
+void handleVibration() {
+    static bool lastVibrationState = HIGH;
+    unsigned long currentMillis = millis();
+    
+    int vibrationState = digitalRead(VIBRATION_SENSOR_PIN);
+    
+    // Detect falling edge (vibration detected)
+    if (vibrationState == LOW && lastVibrationState == HIGH) {
+        // Debounce check
+        if (currentMillis - lastVibrationTime > VIBRATION_DEBOUNCE_MS || currentMillis < lastVibrationTime) {
+            lastVibrationTime = currentMillis;
+            
+            Serial.println("VIBRATION DETECTED!");
+            
+            // Activate buzzer
+            activateBuzzer(BUZZER_WRONG_PIN_DURATION);
+            
+            // Send vibration alert via MQTT
+            String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/alert";
+            StaticJsonDocument<128> doc;
+            doc["type"] = "vibration";
+            doc["timestamp"] = rtc.now().unixtime();
+            
+            String jsonString;
+            serializeJson(doc, jsonString);
+            mqttClient.publish(topic.c_str(), jsonString.c_str());
+            
+            Serial.println("Vibration alert sent");
+        }
+    }
+    
+    lastVibrationState = vibrationState;
 }
