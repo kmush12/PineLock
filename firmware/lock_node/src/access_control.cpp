@@ -1,4 +1,5 @@
 #include "access_control.h"
+#include <ctype.h>
 
 AccessControl::AccessControl(RTC_DS3231* rtcInstance) {
     rtc = rtcInstance;
@@ -16,6 +17,17 @@ bool AccessControl::addPINCode(const char* code, bool isActive, bool hasTimeLimi
                                DateTime validFrom, DateTime validUntil) {
     if (pinCodeCount >= MAX_PIN_CODES) {
         return false;
+    }
+
+    size_t codeLen = strlen(code);
+    if (codeLen == 0 || codeLen > PIN_LENGTH) {
+        return false;
+    }
+
+    for (size_t i = 0; i < codeLen; i++) {
+        if (!isdigit(static_cast<unsigned char>(code[i]))) {
+            return false;
+        }
     }
     
     // Check if code already exists

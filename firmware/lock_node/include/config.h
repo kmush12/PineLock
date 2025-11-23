@@ -6,7 +6,7 @@
 #define WIFI_PASSWORD "M3WGS27SRMY6"      // Your WiFi password
 
 // MQTT Configuration - SET THESE BEFORE DEPLOYMENT!
-#define MQTT_BROKER "192.168.1.13"        // IP address of MQTT broker (e.g., "192.168.1.100")
+#define MQTT_BROKER "192.168.1.15"        // IP address of MQTT broker (e.g., "192.168.1.100")
 #define MQTT_PORT 1883
 #define MQTT_USERNAME ""      // MQTT username (leave empty if no auth)
 #define MQTT_PASSWORD ""      // MQTT password (leave empty if no auth)

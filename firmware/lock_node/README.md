@@ -103,6 +103,7 @@ pio device monitor
 | 🎹 Keypad debounce | 500 ms | Key press stabilization |
 | 📡 RFID check interval | 500 ms | Card detection frequency |
 | 🐕 Watchdog timeout | 30 seconds | System hang recovery |
+| 🔢 PIN length | 10 digits | Maximum length stored in EEPROM |
 
 ## File Structure
 
@@ -127,6 +128,26 @@ firmware/lock_node/
 |-------|---------|-------------|
 | `pinelock/{device_id}/command` | `{"action": "lock\|unlock"}` | 🔐 Remote lock control |
 | `pinelock/{device_id}/sync` | `{}` | 🔄 Trigger configuration sync |
+
+#### Remote PIN Provisioning
+
+Send to `pinelock/{device_id}/command`:
+
+```json
+{
+  "action": "add_pin",
+  "code": "567890",
+  "active": true,
+  "valid_from": 1732204800,
+  "valid_until": 1732291200
+}
+```
+
+- `code` – required, up to 10 digits (excess digits are rejected)
+- `active` – optional, defaults to `true`
+- `valid_from`/`valid_until` – optional Unix timestamps; include both to enforce a time window
+
+Remove a code by publishing `{"action": "remove_pin", "code": "567890"}` to the same topic. Each successful change emits an `access` event with `access_type = admin_pin_*` so the backend can audit configuration edits.
 
 ### 📤 Published Topics (Device Sends)
 

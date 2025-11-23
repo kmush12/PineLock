@@ -65,7 +65,8 @@ class MQTTClient:
             topics = [
                 f"{settings.mqtt_topic_prefix}/+/status",
                 f"{settings.mqtt_topic_prefix}/+/access",
-                f"{settings.mqtt_topic_prefix}/+/heartbeat"
+                f"{settings.mqtt_topic_prefix}/+/heartbeat",
+                f"{settings.mqtt_topic_prefix}/+/sync"
             ]
             for topic in topics:
                 self.client.subscribe(topic)

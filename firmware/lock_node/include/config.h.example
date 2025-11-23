@@ -50,7 +50,7 @@
 // Access Control
 #define MAX_PIN_CODES 50
 #define MAX_RFID_CARDS 50
-#define PIN_LENGTH 4
+#define PIN_LENGTH 10
 
 #endif // CONFIG_EXAMPLE_H</content>
 <parameter name="filePath">/home/kmush/IdeaProjects/PineLock/firmware/lock_node/include/config.h.example

@@ -222,7 +222,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String messageType = topicStr.substring(prefix.length());
     
     // Parse JSON payload
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<1024> doc;
     DeserializationError error = deserializeJson(doc, payload, length);
     
     if (error) {
@@ -248,9 +248,52 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         } else if (action == "unlock") {
             controlLock(false);
             sendAccessEvent("remote", "mqtt", true);
+        } else if (action == "add_pin") {
+            if (!doc.containsKey("code")) {
+                Serial.println("Error: Missing 'code' for add_pin");
+                return;
+            }
+
+            String code = doc["code"].as<String>();
+            bool isActive = doc.containsKey("active") ? doc["active"].as<bool>() : true;
+
+            bool hasTimeLimit = false;
+            DateTime validFrom = DateTime();
+            DateTime validUntil = DateTime();
+
+            if (doc.containsKey("valid_from") && doc.containsKey("valid_until")) {
+                uint32_t fromTs = doc["valid_from"].as<uint32_t>();
+                uint32_t untilTs = doc["valid_until"].as<uint32_t>();
+                validFrom = DateTime(fromTs);
+                validUntil = DateTime(untilTs);
+                hasTimeLimit = true;
+            }
+
+            bool added = accessControl.addPINCode(code.c_str(), isActive, hasTimeLimit, validFrom, validUntil);
+            Serial.println(added ? "PIN added via MQTT" : "Failed to add PIN via MQTT");
+            sendAccessEvent("admin_pin_add", code.c_str(), added);
+            if (added) {
+                sendStatusUpdate();
+            }
+        } else if (action == "remove_pin") {
+            if (!doc.containsKey("code")) {
+                Serial.println("Error: Missing 'code' for remove_pin");
+                return;
+            }
+
+            String code = doc["code"].as<String>();
+            bool removed = accessControl.removePINCode(code.c_str());
+            Serial.println(removed ? "PIN removed via MQTT" : "Failed to remove PIN via MQTT");
+            sendAccessEvent("admin_pin_remove", code.c_str(), removed);
+            if (removed) {
+                sendStatusUpdate();
+            }
         } else {
             Serial.println("Unknown command action: " + action);
         }
+    } else if (messageType == "config") {
+        Serial.println("Config update received from server");
+        handleConfigUpdate(doc);
     } else if (messageType == "sync") {
         Serial.println("Sync request received (not yet implemented)");
         // TODO: Request access codes and RFID cards from server
@@ -277,17 +320,20 @@ void reconnectMQTT() {
         if (connected) {
             Serial.println("connected!");
             
-            // Subscribe to command and sync topics
+            // Subscribe to command, config, and sync topics
             String commandTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/command";
+            String configTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/config";
             String syncTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/sync";
             
             mqttClient.subscribe(commandTopic.c_str());
+            mqttClient.subscribe(configTopic.c_str());
             mqttClient.subscribe(syncTopic.c_str());
             
             Serial.println("Subscribed to topics");
             
             // Send initial status
             sendStatusUpdate();
+            requestConfigSync();
         } else {
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
@@ -369,6 +415,66 @@ void sendStatusUpdate() {
 
     mqttClient.publish(topic.c_str(), buffer);
     Serial.println("Status update sent");
+}
+
+void handleConfigUpdate(const JsonDocument& doc) {
+    Serial.println("Applying configuration update...");
+
+    // Update PIN codes
+    accessControl.clearPINCodes();
+    if (doc.containsKey("access_codes") && doc["access_codes"].is<JsonArray>()) {
+        JsonArrayConst pins = doc["access_codes"].as<JsonArrayConst>();
+        for (JsonVariantConst pinValue : pins) {
+            const char* code = pinValue.as<const char*>();
+            if (code && strlen(code) > 0) {
+                accessControl.addPINCode(code);
+            }
+        }
+    }
+    Serial.print("Loaded PIN codes: ");
+    Serial.println(accessControl.getPINCodeCount());
+
+    // Update RFID cards
+    accessControl.clearRFIDCards();
+    if (doc.containsKey("rfid_cards") && doc["rfid_cards"].is<JsonArray>()) {
+        JsonArrayConst cards = doc["rfid_cards"].as<JsonArrayConst>();
+        for (JsonVariantConst cardValue : cards) {
+            const char* uid = cardValue.as<const char*>();
+            if (uid && strlen(uid) > 0) {
+                accessControl.addRFIDCard(uid);
+            }
+        }
+    }
+    Serial.print("Loaded RFID cards: ");
+    Serial.println(accessControl.getRFIDCardCount());
+
+    if (doc.containsKey("key_tag")) {
+        const char* keyTag = doc["key_tag"].as<const char*>();
+        if (keyTag && strlen(keyTag) > 0) {
+            Serial.print("Key tag configured: ");
+            Serial.println(keyTag);
+        } else {
+            Serial.println("Key tag cleared or not provided");
+        }
+    } else {
+        Serial.println("Key tag not included in config");
+    }
+
+    sendStatusUpdate();
+}
+
+void requestConfigSync() {
+    if (!mqttClient.connected()) {
+        Serial.println("Cannot request config sync - MQTT disconnected");
+        return;
+    }
+    StaticJsonDocument<64> doc;
+    doc["request"] = "config";
+    String payload;
+    serializeJson(doc, payload);
+    String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/sync";
+    bool published = mqttClient.publish(topic.c_str(), payload.c_str());
+    Serial.println(published ? "Sync request sent" : "Failed to send sync request");
 }
 
 void sendKeyStatusUpdate(bool keyPresent, String cardUID) {
@@ -472,8 +578,8 @@ void processPINEntry(char key) {
         currentPIN = "";
         Serial.println("PIN cleared");
     } else if (key >= '0' && key <= '9') {
-        // Add digit to PIN (max 10 digits)
-        if (currentPIN.length() < 10) {
+        // Add digit to PIN up to configured max length
+        if (currentPIN.length() < PIN_LENGTH) {
             currentPIN += key;
         }
     }

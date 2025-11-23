@@ -132,20 +132,38 @@ MQTT connected!
 
 **Topic:** `pinelock/lock_001/command`
 
-**Payload (przykład - implementacja potrzebna w backend):**
+**Dodanie lub aktualizacja PIN:**
+
 ```json
 {
-  "action": "add_pin",
-  "code": "5678",
-  "active": true
+   "action": "add_pin",
+   "code": "567890",
+   "active": true,
+   "valid_from": 1732204800,
+   "valid_until": 1732291200
 }
 ```
+
+- `code` – wymagane, maks. 10 cyfr
+- `active` – opcjonalne, domyślnie `true`
+- `valid_from`/`valid_until` – opcjonalne znaczniki czasu UNIX (podaj oba, aby włączyć limit czasowy)
+
+**Usuwanie PIN:**
+
+```json
+{
+   "action": "remove_pin",
+   "code": "567890"
+}
+```
+
+Każda udana operacja zapisuje dane w EEPROM i generuje zdarzenie `access` (`admin_pin_add` lub `admin_pin_remove`) w celu audytu.
 
 Obecnie dostępne komendy:
 - `{"action": "lock"}` - zamknij zamek
 - `{"action": "unlock"}` - otwórz zamek
-
-**UWAGA:** Funkcja dodawania PIN/RFID przez MQTT wymaga implementacji w firmware (TODO).
+- `{"action": "add_pin", ...}` - dodaj/aktualizuj PIN
+- `{"action": "remove_pin", ...}` - usuń PIN
 
 ### 6. Ręczne dodawanie kodów (tymczasowo)
 
