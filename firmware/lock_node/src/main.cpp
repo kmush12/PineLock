@@ -45,6 +45,7 @@ unsigned long lastKeyTime = 0;
 unsigned long buzzerStopTime = 0;
 bool buzzerActive = false;
 unsigned long lastVibrationTime = 0;
+String keyTagUID = "";  // UID of the key tag for presence detection
 
 // Function declarations
 void setupWiFi();
@@ -68,8 +69,13 @@ String getCardUID(MFRC522::Uid* uid);
 
 void setup() {
     Serial.begin(115200);
+    delay(1000);
     Serial.println("\n\n=== PineLock Firmware ===");
     Serial.println("Device ID: " + String(DEVICE_ID));
+    Serial.print("Firmware built: ");
+    Serial.print(__DATE__);
+    Serial.print(" ");
+    Serial.println(__TIME__);
     
     // Configure watchdog timer
     esp_task_wdt_init(WDT_TIMEOUT, true);
@@ -138,15 +144,28 @@ void setupWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
+    int attempts = 0;
     while (WiFi.status() != WL_CONNECTED) {
         esp_task_wdt_reset(); // Feed watchdog during WiFi connection
         delay(500);
         Serial.print(".");
+        attempts++;
+        if (attempts % 10 == 0) {
+            Serial.print(" [");
+            Serial.print(attempts);
+            Serial.print("] ");
+        }
+        if (attempts > 60) {
+            Serial.println("\nWiFi connection timeout! Restarting...");
+            ESP.restart();
+        }
     }
     
     Serial.println("\nWiFi connected!");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+    Serial.print("Signal strength (RSSI): ");
+    Serial.println(WiFi.RSSI());
 }
 
 void setupMQTT() {
@@ -188,20 +207,37 @@ void setupHardware() {
     // Initialize RFID with custom SPI pins
     SPI.begin(RFID_SCK_PIN, RFID_MISO_PIN, RFID_MOSI_PIN, RFID_SS_PIN);
     rfid.PCD_Init();
-    Serial.println("RFID initialized");
+    
+    // Test RFID communication
+    byte version = rfid.PCD_ReadRegister(rfid.VersionReg);
+    Serial.print("RFID initialized - Version: 0x");
+    Serial.println(version, HEX);
+    if (version == 0x00 || version == 0xFF) {
+        Serial.println("WARNING: RC522 communication failed! Check wiring.");
+    } else {
+        Serial.println("RC522 communication OK");
+    }
     
     // Initialize lock control pin
     pinMode(LOCK_MOSFET_PIN, OUTPUT);
     digitalWrite(LOCK_MOSFET_PIN, LOW); // Locked
     
     // Initialize buzzer pin
+#if ENABLE_BUZZER
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW); // Off
     Serial.println("Buzzer initialized");
+#else
+    Serial.println("Buzzer disabled (ENABLE_BUZZER=0)");
+#endif
     
     // Initialize vibration sensor pin
+#if ENABLE_VIBRATION_SENSOR
     pinMode(VIBRATION_SENSOR_PIN, INPUT_PULLUP);
     Serial.println("Vibration sensor initialized");
+#else
+    Serial.println("Vibration sensor disabled (ENABLE_VIBRATION_SENSOR=0)");
+#endif
     
     Serial.println("Hardware initialization complete");
     Serial.println("WARNING: No default PIN configured. Add PINs via MQTT.");
@@ -222,7 +258,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String messageType = topicStr.substring(prefix.length());
     
     // Parse JSON payload
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, payload, length);
     
     if (error) {
@@ -291,19 +327,70 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         } else {
             Serial.println("Unknown command action: " + action);
         }
-    } else if (messageType == "config") {
-        Serial.println("Config update received from server");
-        handleConfigUpdate(doc);
     } else if (messageType == "sync") {
-        Serial.println("Sync request received (not yet implemented)");
-        // TODO: Request access codes and RFID cards from server
+        Serial.println("Sync request received - waiting for config data");
+    } else if (messageType == "config") {
+        Serial.println("Config received from server");
+        
+        // Clear all existing PINs and RFID cards
+        accessControl.clearPINCodes();
+        accessControl.clearRFIDCards();
+        
+        // Process access_codes array
+        if (doc.containsKey("access_codes")) {
+            JsonArray codes = doc["access_codes"].as<JsonArray>();
+            Serial.print("Received ");
+            Serial.print(codes.size());
+            Serial.println(" PIN codes");
+            
+            for (JsonVariant codeVariant : codes) {
+                String code = codeVariant.as<String>();
+                bool added = accessControl.addPINCode(code.c_str(), true, false, DateTime(), DateTime());
+                Serial.print("  PIN ");
+                Serial.print(code);
+                Serial.println(added ? " - added" : " - failed");
+            }
+        }
+        
+        // Process rfid_cards array
+        if (doc.containsKey("rfid_cards")) {
+            JsonArray cards = doc["rfid_cards"].as<JsonArray>();
+            Serial.print("Received ");
+            Serial.print(cards.size());
+            Serial.println(" RFID cards");
+            
+            for (JsonVariant cardVariant : cards) {
+                String cardUid = cardVariant.as<String>();
+                bool added = accessControl.addRFIDCard(cardUid.c_str(), true, false, DateTime(), DateTime());
+                Serial.print("  Card ");
+                Serial.print(cardUid);
+                Serial.println(added ? " - added" : " - failed");
+            }
+        }
+        
+        // Process key_tag
+        if (doc.containsKey("key_tag") && !doc["key_tag"].isNull()) {
+            keyTagUID = doc["key_tag"].as<String>();
+            Serial.print("Key tag UID configured: ");
+            Serial.println(keyTagUID);
+        } else {
+            keyTagUID = "";
+            Serial.println("No key tag configured");
+        }
+        
+        Serial.println("Config sync completed!");
+        sendStatusUpdate();
     }
 }
 
 void reconnectMQTT() {
     while (!mqttClient.connected()) {
         esp_task_wdt_reset(); // Feed the watchdog!
-        Serial.print("Attempting MQTT connection...");
+        Serial.print("Attempting MQTT connection to ");
+        Serial.print(MQTT_BROKER);
+        Serial.print(":");
+        Serial.print(MQTT_PORT);
+        Serial.print("...");
         
         String clientId = "PineLock-" + String(DEVICE_ID);
         
@@ -320,20 +407,19 @@ void reconnectMQTT() {
         if (connected) {
             Serial.println("connected!");
             
-            // Subscribe to command, config, and sync topics
+            // Subscribe to command, sync, and config topics
             String commandTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/command";
-            String configTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/config";
             String syncTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/sync";
+            String configTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/config";
             
             mqttClient.subscribe(commandTopic.c_str());
-            mqttClient.subscribe(configTopic.c_str());
             mqttClient.subscribe(syncTopic.c_str());
+            mqttClient.subscribe(configTopic.c_str());
             
             Serial.println("Subscribed to topics");
             
             // Send initial status
             sendStatusUpdate();
-            requestConfigSync();
         } else {
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
@@ -417,66 +503,6 @@ void sendStatusUpdate() {
     Serial.println("Status update sent");
 }
 
-void handleConfigUpdate(const JsonDocument& doc) {
-    Serial.println("Applying configuration update...");
-
-    // Update PIN codes
-    accessControl.clearPINCodes();
-    if (doc.containsKey("access_codes") && doc["access_codes"].is<JsonArray>()) {
-        JsonArrayConst pins = doc["access_codes"].as<JsonArrayConst>();
-        for (JsonVariantConst pinValue : pins) {
-            const char* code = pinValue.as<const char*>();
-            if (code && strlen(code) > 0) {
-                accessControl.addPINCode(code);
-            }
-        }
-    }
-    Serial.print("Loaded PIN codes: ");
-    Serial.println(accessControl.getPINCodeCount());
-
-    // Update RFID cards
-    accessControl.clearRFIDCards();
-    if (doc.containsKey("rfid_cards") && doc["rfid_cards"].is<JsonArray>()) {
-        JsonArrayConst cards = doc["rfid_cards"].as<JsonArrayConst>();
-        for (JsonVariantConst cardValue : cards) {
-            const char* uid = cardValue.as<const char*>();
-            if (uid && strlen(uid) > 0) {
-                accessControl.addRFIDCard(uid);
-            }
-        }
-    }
-    Serial.print("Loaded RFID cards: ");
-    Serial.println(accessControl.getRFIDCardCount());
-
-    if (doc.containsKey("key_tag")) {
-        const char* keyTag = doc["key_tag"].as<const char*>();
-        if (keyTag && strlen(keyTag) > 0) {
-            Serial.print("Key tag configured: ");
-            Serial.println(keyTag);
-        } else {
-            Serial.println("Key tag cleared or not provided");
-        }
-    } else {
-        Serial.println("Key tag not included in config");
-    }
-
-    sendStatusUpdate();
-}
-
-void requestConfigSync() {
-    if (!mqttClient.connected()) {
-        Serial.println("Cannot request config sync - MQTT disconnected");
-        return;
-    }
-    StaticJsonDocument<64> doc;
-    doc["request"] = "config";
-    String payload;
-    serializeJson(doc, payload);
-    String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/sync";
-    bool published = mqttClient.publish(topic.c_str(), payload.c_str());
-    Serial.println(published ? "Sync request sent" : "Failed to send sync request");
-}
-
 void sendKeyStatusUpdate(bool keyPresent, String cardUID) {
     if (!mqttClient.connected()) {
         return;
@@ -508,17 +534,23 @@ void handleKeypad() {
     char key = readKeypad();
     unsigned long currentMillis = millis();
     
-    if (key != '\0' && key != lastKey) {
-        Serial.print("Key pressed: ");
-        Serial.println(key);
-        lastKey = key;
-        lastKeyTime = currentMillis;
+    // Process key if:
+    // 1. Valid key pressed ('\0' = no key)
+    // 2. Different from last key OR debounce timeout expired (allows same key repeat)
+    if (key != '\0') {
+        bool isDifferentKey = (key != lastKey);
+        bool debounceExpired = (currentMillis - lastKeyTime > KEYPAD_DEBOUNCE_MS || currentMillis < lastKeyTime);
         
-        processPINEntry(key);
-    }
-    
-    // Clear last key after timeout to allow repeat presses (with overflow protection)
-    if (currentMillis - lastKeyTime > KEYPAD_DEBOUNCE_MS || currentMillis < lastKeyTime) {
+        if (isDifferentKey || debounceExpired) {
+            Serial.print("Key pressed: ");
+            Serial.println(key);
+            lastKey = key;
+            lastKeyTime = currentMillis;
+            
+            processPINEntry(key);
+        }
+    } else {
+        // No key pressed - clear last key immediately to allow fast repeat
         lastKey = '\0';
     }
 }
@@ -557,7 +589,10 @@ void processPINEntry(char key) {
         // Submit PIN
         if (currentPIN.length() > 0) {
             Serial.print("Validating PIN: ");
-            Serial.println(currentPIN);
+            Serial.print(currentPIN);
+            Serial.print(" (length: ");
+            Serial.print(currentPIN.length());
+            Serial.println(")");
             
             bool valid = accessControl.validatePIN(currentPIN.c_str());
             
@@ -575,12 +610,21 @@ void processPINEntry(char key) {
         }
     } else if (key == '*') {
         // Clear PIN
+        Serial.print("PIN cleared (was: ");
+        Serial.print(currentPIN.length());
+        Serial.println(" digits)");
         currentPIN = "";
-        Serial.println("PIN cleared");
     } else if (key >= '0' && key <= '9') {
         // Add digit to PIN up to configured max length
         if (currentPIN.length() < PIN_LENGTH) {
             currentPIN += key;
+            Serial.print("PIN digit added: ");
+            Serial.print(key);
+            Serial.print(" (total: ");
+            Serial.print(currentPIN.length());
+            Serial.println(" digits)");
+        } else {
+            Serial.println("PIN max length reached, ignoring digit");
         }
     }
 }
@@ -588,6 +632,7 @@ void processPINEntry(char key) {
 void handleRFID() {
     static bool lastKeyPresent = false;
     static unsigned long lastRFIDCheck = 0;
+    static unsigned long debugPrintTime = 0;
     unsigned long currentMillis = millis();
 
     // Check RFID presence every 500ms to avoid spam (with overflow protection)
@@ -596,8 +641,25 @@ void handleRFID() {
     }
     lastRFIDCheck = currentMillis;
 
+    // Debug print every 10 seconds
+    if (currentMillis - debugPrintTime > 10000) {
+        debugPrintTime = currentMillis;
+        Serial.println("[RFID Debug] Checking for cards...");
+    }
+
     // Check if a card is present
-    bool keyPresent = rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial();
+    bool cardPresent = rfid.PICC_IsNewCardPresent();
+    bool cardRead = false;
+    
+    if (cardPresent) {
+        Serial.println("[RFID Debug] Card detected by PICC_IsNewCardPresent()");
+        cardRead = rfid.PICC_ReadCardSerial();
+        if (!cardRead) {
+            Serial.println("[RFID Debug] Failed to read card serial");
+        }
+    }
+    
+    bool keyPresent = cardPresent && cardRead;
 
     // Only report changes in key presence
     if (keyPresent != lastKeyPresent) {
@@ -605,17 +667,24 @@ void handleRFID() {
 
         if (keyPresent) {
             String cardUID = getCardUID(&rfid.uid);
-            Serial.print("RFID key detected in box: ");
+            Serial.print("RFID card detected: ");
             Serial.println(cardUID);
 
-            // Check if this is a registered key
-            bool valid = accessControl.validateRFID(cardUID.c_str());
-            if (valid) {
-                Serial.println("Valid key present in box");
+            // Check if this is the key tag
+            if (keyTagUID.length() > 0 && cardUID == keyTagUID) {
+                Serial.println("Key tag detected - presence confirmed");
                 sendKeyStatusUpdate(true, cardUID.c_str());
             } else {
-                Serial.println("Unknown key detected in box");
-                sendKeyStatusUpdate(true, cardUID.c_str());
+                // Check if this is a registered access card
+                bool valid = accessControl.validateRFID(cardUID.c_str());
+                if (valid) {
+                    Serial.println("Valid access card - unlocking");
+                    controlLock(false);
+                    sendAccessEvent("rfid", cardUID.c_str(), true);
+                } else {
+                    Serial.println("Unknown RFID card");
+                    sendAccessEvent("rfid", cardUID.c_str(), false);
+                }
             }
 
             // Halt PICC
@@ -631,12 +700,13 @@ void handleRFID() {
 String getCardUID(MFRC522::Uid* uid) {
     String uidStr = "";
     for (byte i = 0; i < uid->size; i++) {
+        if (i > 0) uidStr += ":";
         if (uid->uidByte[i] < 0x10) {
             uidStr += "0";
         }
         uidStr += String(uid->uidByte[i], HEX);
     }
-    uidStr.toUpperCase();
+    uidStr.toLowerCase();
     return uidStr;
 }
 
@@ -657,13 +727,21 @@ void controlLock(bool lock) {
 }
 
 void activateBuzzer(unsigned long duration) {
+#if !ENABLE_BUZZER
+    (void)duration;
+    return;
+#else
     buzzerActive = true;
     buzzerStopTime = millis() + duration;
     digitalWrite(BUZZER_PIN, HIGH);
     Serial.println("Buzzer activated");
+#endif
 }
 
 void handleBuzzer() {
+#if !ENABLE_BUZZER
+    return;
+#else
     if (buzzerActive) {
         unsigned long currentMillis = millis();
         if (currentMillis >= buzzerStopTime || currentMillis < buzzerStopTime - BUZZER_WRONG_PIN_DURATION - 1000) {
@@ -672,9 +750,13 @@ void handleBuzzer() {
             Serial.println("Buzzer deactivated");
         }
     }
+#endif
 }
 
 void handleVibration() {
+#if !ENABLE_VIBRATION_SENSOR
+    return;
+#else
     static bool lastVibrationState = HIGH;
     unsigned long currentMillis = millis();
     
@@ -706,4 +788,5 @@ void handleVibration() {
     }
     
     lastVibrationState = vibrationState;
+#endif
 }

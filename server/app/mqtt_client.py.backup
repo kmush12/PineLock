@@ -1,10 +1,7 @@
 import paho.mqtt.client as mqtt
 import json
 import logging
-import asyncio
-import inspect
 from typing import Callable, Optional
-from concurrent.futures import ThreadPoolExecutor
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +14,6 @@ class MQTTClient:
         self.client: Optional[mqtt.Client] = None
         self.message_handlers = {}
         self.is_connected = False
-        self.executor = ThreadPoolExecutor(max_workers=5)
     
     def connect(self):
         """Connect to MQTT broker."""
@@ -57,7 +53,6 @@ class MQTTClient:
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
-            self.executor.shutdown(wait=True)
             logger.info("Disconnected from MQTT broker")
     
     def _on_connect(self, client, userdata, flags, rc):
@@ -87,18 +82,6 @@ class MQTTClient:
         else:
             logger.info("Disconnected from MQTT broker")
     
-    def _run_async_handler(self, handler, device_id, data):
-        """Run async handler in a new event loop."""
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                loop.run_until_complete(handler(device_id, data))
-            finally:
-                loop.close()
-        except Exception as e:
-            logger.error(f"Error running async handler: {e}", exc_info=True)
-    
     def _on_message(self, client, userdata, msg):
         """Callback for when a message is received."""
         try:
@@ -117,13 +100,7 @@ class MQTTClient:
                 if handler_key in self.message_handlers:
                     try:
                         data = json.loads(payload)
-                        handler = self.message_handlers[handler_key]
-                        # Check if handler is async and run it appropriately
-                        if inspect.iscoroutinefunction(handler):
-                            # Run async handler in thread pool
-                            self.executor.submit(self._run_async_handler, handler, device_id, data)
-                        else:
-                            handler(device_id, data)
+                        self.message_handlers[handler_key](device_id, data)
                     except json.JSONDecodeError:
                         logger.error(f"Failed to parse JSON payload: {payload}")
                     except Exception as e:

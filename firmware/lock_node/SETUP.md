@@ -76,7 +76,7 @@
 ### Co się dzieje gdy ktoś szarpie za zamek:
 
 1. **Czujnik wstrząsów** wykrywa wibracje 📳
-2. **ESP32** dostaje sygnał LOW na GPIO 9
+2. **ESP32** dostaje sygnał LOW na GPIO 21 (D6)
 3. **Buzzer piszczy** przez 1 sekundę 🔊
 4. ESP32 wysyła **ALERT** przez MQTT do serwera
 5. Możesz dostać powiadomienie na telefon! 📱
@@ -184,10 +184,10 @@ RC522 używa **SPI** - szybszego połączenia niż I2C (potrzebuje 6 przewodów,
 
 | Przewód RC522 | Pin ESP32 | GPIO | Co to robi? | Wymagany? |
 |---------------|-----------|------|-------------|-----------|
-| **SDA (SS)** | GPIO 3 | 3 | "Wybór" czytnika | ✅ TAK |
-| **SCK** | GPIO 8 | 8 | Zegar (takt) | ✅ TAK |
-| **MOSI** | GPIO 5 | 5 | Dane ESP→RC522 | ✅ TAK |
-| **MISO** | GPIO 4 | 4 | Dane RC522→ESP | ✅ TAK |
+| **SDA (SS)** | GPIO 3 (D2) | 3 | "Wybór" czytnika | ✅ TAK |
+| **SCK** | GPIO 7 (D8) | 7 | Zegar (takt) | ✅ TAK |
+| **MOSI** | GPIO 9 (D10) | 9 | Dane ESP→RC522 | ✅ TAK |
+| **MISO** | GPIO 8 (D9) | 8 | Dane RC522→ESP | ✅ TAK |
 | **RST** | GPIO 2 | 2 | Reset czytnika | ✅ TAK |
 | **IRQ** | - | - | Przerwanie (interrupt) | ❌ NIE* |
 | **VCC** | 3.3V | - | Zasilanie | ✅ TAK |
@@ -319,7 +319,7 @@ ESP32 może dać **max 40mA**. Zamek potrzebuje **200-500mA**! MOSFET pozwala ma
 | Przewód czujnika | Pin ESP32 | GPIO | Uwagi |
 |------------------|-----------|------|-------|
 | **VCC** | 3.3V | - | Zasilanie |
-| **D0 (Digital)** | GPIO 9 | 9 | Wyjście cyfrowe (LOW = wstrząs) |
+| **D0 (Digital)** | GPIO 21 (D6) | 21 | Wyjście cyfrowe (LOW = wstrząs); dzielone z TX (UART), ale dostępne jako wejście |
 | **GND** | GND | - | Masa |
 
 💡 **TIP**: 
@@ -613,7 +613,7 @@ Zamek powinien się otworzyć!
 - Testuj aż znajdziesz idealne ustawienie!
 
 ❌ **Nie działa?** → Sprawdź:
-- Czy czujnik jest podłączony do GPIO 9?
+- Czy czujnik jest podłączony do GPIO 21 (D6)?
 - Czy używasz pinu **D0** (cyfrowy), nie A0 (analogowy)?
 - Czy zasilanie to 3.3V (nie 5V)?
 - Czy na czujniku świeci LED przy wstrząsie?
@@ -696,7 +696,7 @@ I2C device found at address 0x68  ← DS3231 (zegar)
 
 **Rozwiązanie:**
 1. Sprawdź zasilanie 12V multimetrem
-2. Sprawdź połączenie GPIO 10 → MOSFET IN
+2. Sprawdź połączenie GPIO 4 (D3) → MOSFET IN
 3. Sprawdź **wspólną masę** - GND z ESP32 i GND z zasilacza 12V muszą być połączone!
 4. Testuj MOSFET ręcznie - podepnij 3.3V do IN, zamek powinien kliknąć
 5. Sprawdź czy zamek pobiera mniej niż 1A (limit zasilacza)
@@ -710,16 +710,16 @@ I2C device found at address 0x68  ← DS3231 (zegar)
 
 | Co | Gdzie na ESP32 | Gdzie na module | Uwagi |
 |----|----------------|-----------------|-------|
-| **I2C SDA** | GPIO 6 | PCF8574 + DS3231 | Wspólna magistrala |
-| **I2C SCL** | GPIO 7 | PCF8574 + DS3231 | Wspólna magistrala |
-| **RFID SS** | GPIO 3 | RC522 SDA | Chip Select |
-| **RFID MISO** | GPIO 4 | RC522 MISO | Dane RC522→ESP |
-| **RFID MOSI** | GPIO 5 | RC522 MOSI | Dane ESP→RC522 |
-| **RFID SCK** | GPIO 8 | RC522 SCK | Zegar SPI |
+| **I2C SDA** | GPIO 5 (D4) | PCF8574 + DS3231 | Wspólna magistrala |
+| **I2C SCL** | GPIO 6 (D5) | PCF8574 + DS3231 | Wspólna magistrala |
+| **RFID SS** | GPIO 3 (D2) | RC522 SDA | Chip Select |
+| **RFID MISO** | GPIO 8 (D9) | RC522 MISO | Dane RC522→ESP |
+| **RFID MOSI** | GPIO 9 (D10) | RC522 MOSI | Dane ESP→RC522 |
+| **RFID SCK** | GPIO 7 (D8) | RC522 SCK | Zegar SPI |
 | **RFID RST** | GPIO 2 | RC522 RST | Reset czytnika |
-| **Zamek** | GPIO 10 | MOSFET IN | Sterowanie zamkiem |
+| **Zamek** | GPIO 4 (D3) | MOSFET IN | Sterowanie zamkiem |
 | **Buzzer** | GPIO 1 | Buzzer I/O | Dźwięk alarmu |
-| **Czujnik wstrząsów** | GPIO 9 | Waveshare 9536 D0 | Wykrywanie wibracji |
+| **Czujnik wstrząsów** | GPIO 21 (D6) | Waveshare 9536 D0 | Wykrywanie wibracji |
 
 ### Podłączenia klawiatury MOD-01681 (3x4):
 
@@ -950,7 +950,7 @@ rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
 | Connection | Pin/Wire | Notes |
 |------------|----------|-------|
-| Signal IN | GPIO 10 | From ESP32-C3 |
+| Signal IN | GPIO 4 (D3) | From ESP32-C3 |
 | VCC | 5V | MOSFET module power |
 | GND | Common GND | Shared ground |
 | MOSFET OUT+ | Lock + | To lock positive |
@@ -961,7 +961,7 @@ rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 12V PSU (+) ──→ Lock (+)
 Lock (-)    ──→ MOSFET Drain
 MOSFET Source ──→ 12V PSU (-)
-ESP32 GPIO10  ──→ MOSFET Gate (via module)
+ESP32 GPIO4 (D3) ──→ MOSFET Gate (via module)
 ```
 
 > 🔒 **Safety**: Ensure proper current rating for your lock. Typical locks draw 200-500mA.
@@ -1177,7 +1177,7 @@ mosquitto_sub -h localhost -t "pinelock/lock_001/#" -v
 <summary><b>❌ Lock Not Activating</b></summary>
 
 **Solutions:**
-1. Verify GPIO 10 connection to MOSFET
+1. Verify GPIO 4 (D3) connection to MOSFET
 2. Check 12V power supply
 3. Test MOSFET manually with 3.3V signal
 4. Verify lock polarity (some locks are polarized)
@@ -1356,7 +1356,7 @@ GPIO 5  → RC522 MOSI
 GPIO 6  → I2C SDA (PCF8574, DS3231)
 GPIO 7  → I2C SCL (PCF8574, DS3231)
 GPIO 8  → RC522 SCK
-GPIO 10 → MOSFET Gate (Lock Control)
+GPIO 4 (D3) → MOSFET Gate (Lock Control)
 ```
 
 ## Troubleshooting
