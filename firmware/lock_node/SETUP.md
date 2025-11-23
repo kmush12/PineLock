@@ -358,6 +358,14 @@ pip install platformio
 5. Poczekaj ~5 minut na instalację
 6. Uruchom VS Code ponownie
 
+> ⚠️ **WAŻNE (PineLock build/upload/monitor):** Wszystkie komendy `pio ...` muszą korzystać z tego samego środowiska co serwer, bo tylko tam jest zainstalowana właściwa wersja PlatformIO. **Zawsze przed `pio run`, `pio device monitor`, itp. wykonaj w katalogu głównym repo:**
+>
+> ```bash
+> source server/venv/bin/activate
+> ```
+>
+> Następnie przejdź do `firmware/lock_node` i dopiero wtedy uruchamiaj polecenia. Jeśli zapomnisz aktywować `server/venv`, system użyje starego `pio` z `/usr/bin`, co kończy się błędami i konfliktami wersji.
+
 ---
 
 ### 3.2. Skonfiguruj WiFi i MQTT

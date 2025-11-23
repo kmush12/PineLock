@@ -383,10 +383,6 @@ async def access_management(request: Request, session: AsyncSession = Depends(ge
     master_pin_result = await session.execute(select(AccessCode).where(AccessCode.lock_id.is_(None)))
     master_pin = master_pin_result.scalar_one_or_none()
     
-    # Fetch Master RFID (only 1 should exist)
-    master_rfid_result = await session.execute(select(RFIDCard).where(RFIDCard.card_type == 'master'))
-    master_rfid = master_rfid_result.scalar_one_or_none()
-    
     # Fetch Locks with their PIN and Key Tag
     locks_result = await session.execute(select(Lock).order_by(Lock.name))
     locks = locks_result.scalars().all()
@@ -418,7 +414,6 @@ async def access_management(request: Request, session: AsyncSession = Depends(ge
             **_get_user_context(request),
             "active_page": "access",
             "master_pin": master_pin,  # Single or None
-            "master_rfid": master_rfid,  # Single or None
             "locks_data": locks_data,
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error")

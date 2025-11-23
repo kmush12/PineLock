@@ -218,7 +218,7 @@ void setupHardware() {
         Serial.println("RC522 communication OK");
     }
     
-    // Initialize lock control pin
+    // Initialize lock control pin (GPIO2 has pull-down during boot - safe from glitches)
     pinMode(LOCK_MOSFET_PIN, OUTPUT);
     digitalWrite(LOCK_MOSFET_PIN, LOW); // Locked
     
@@ -420,6 +420,15 @@ void reconnectMQTT() {
             
             // Send initial status
             sendStatusUpdate();
+            
+            // Request sync
+            String syncRequestTopic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/sync";
+            StaticJsonDocument<64> syncDoc;
+            syncDoc["request"] = "sync";
+            char syncBuffer[64];
+            serializeJson(syncDoc, syncBuffer);
+            mqttClient.publish(syncRequestTopic.c_str(), syncBuffer);
+            Serial.println("Sync requested");
         } else {
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
@@ -649,50 +658,93 @@ void handleRFID() {
 
     // Check if a card is present
     bool cardPresent = rfid.PICC_IsNewCardPresent();
+    
+    // If no new card, try to wake up halted cards (for continuous presence)
+    if (!cardPresent) {
+        byte bufferATQA[2];
+        byte bufferSize = sizeof(bufferATQA);
+        MFRC522::StatusCode status = rfid.PICC_WakeupA(bufferATQA, &bufferSize);
+        if (status == MFRC522::STATUS_OK || status == MFRC522::STATUS_COLLISION) {
+            cardPresent = true;
+        } else {
+            // Serial.print("[RFID Debug] Wakeup failed: ");
+            // Serial.println(rfid.GetStatusCodeName(status));
+        }
+    }
+
     bool cardRead = false;
+    String currentCardUID = "";
     
     if (cardPresent) {
-        Serial.println("[RFID Debug] Card detected by PICC_IsNewCardPresent()");
         cardRead = rfid.PICC_ReadCardSerial();
-        if (!cardRead) {
+        if (cardRead) {
+            currentCardUID = getCardUID(&rfid.uid);
+        } else {
             Serial.println("[RFID Debug] Failed to read card serial");
         }
     }
     
     bool keyPresent = cardPresent && cardRead;
+    static unsigned long lastSeenTime = 0;
 
-    // Only report changes in key presence
-    if (keyPresent != lastKeyPresent) {
-        lastKeyPresent = keyPresent;
+    if (keyPresent) {
+        lastSeenTime = currentMillis;
+    }
 
-        if (keyPresent) {
-            String cardUID = getCardUID(&rfid.uid);
+    // Debounce removal: Only consider removed if not seen for 3 seconds
+    bool effectiveKeyPresent = keyPresent;
+    if (!keyPresent && lastKeyPresent && (currentMillis - lastSeenTime < 3000)) {
+        effectiveKeyPresent = true; // Keep it present during grace period
+        // Serial.println("[RFID Debug] Grace period active");
+    }
+
+    // Only report changes in effective key presence
+    if (effectiveKeyPresent != lastKeyPresent) {
+        lastKeyPresent = effectiveKeyPresent;
+
+        if (effectiveKeyPresent) {
+            // If we are here, it means we either just found a key, or we recovered from a glitch
+            // We should use the UID we just read. If we are in grace period (keyPresent=false), 
+            // we might not have a UID this cycle, but we shouldn't be toggling state anyway.
+            // Actually, if effectiveKeyPresent becomes true, it must be because keyPresent is true.
+            
             Serial.print("RFID card detected: ");
-            Serial.println(cardUID);
+            Serial.println(currentCardUID);
 
             // Check if this is the key tag
-            if (keyTagUID.length() > 0 && cardUID == keyTagUID) {
+            if (keyTagUID.length() > 0 && currentCardUID == keyTagUID) {
                 Serial.println("Key tag detected - presence confirmed");
-                sendKeyStatusUpdate(true, cardUID.c_str());
+                sendKeyStatusUpdate(true, currentCardUID.c_str());
             } else {
                 // Check if this is a registered access card
-                bool valid = accessControl.validateRFID(cardUID.c_str());
+                bool valid = accessControl.validateRFID(currentCardUID.c_str());
                 if (valid) {
                     Serial.println("Valid access card - unlocking");
                     controlLock(false);
-                    sendAccessEvent("rfid", cardUID.c_str(), true);
+                    sendAccessEvent("rfid", currentCardUID.c_str(), true);
                 } else {
                     Serial.println("Unknown RFID card");
-                    sendAccessEvent("rfid", cardUID.c_str(), false);
+                    sendAccessEvent("rfid", currentCardUID.c_str(), false);
                 }
             }
 
             // Halt PICC
             rfid.PICC_HaltA();
-            rfid.PCD_StopCrypto1();
         } else {
             Serial.println("RFID key removed from box");
             sendKeyStatusUpdate(false, "");
+        }
+    } else if (effectiveKeyPresent && keyPresent) {
+        // Still present, just Halt to allow next detection
+        rfid.PICC_HaltA();
+    }
+    
+    // Recovery: If no card found, check if module is still responsive
+    if (!cardPresent && (currentMillis - lastRFIDCheck > 2000)) {
+        byte v = rfid.PCD_ReadRegister(rfid.VersionReg);
+        if (v == 0x00 || v == 0xFF) {
+            Serial.println("[RFID] Module unresponsive (Version 0x00/0xFF), re-initializing...");
+            rfid.PCD_Init();
         }
     }
 }

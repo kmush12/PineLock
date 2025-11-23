@@ -17,25 +17,25 @@
 
 // Hardware Pin Configuration
 // I2C for PCF8574 (Keypad) and DS3231 (RTC)
-#define I2C_SDA 4          // D4 = GPIO5 (piny opisane jako SDA)
-#define I2C_SCL 5          // D5 = GPIO6 (piny opisane jako SCL)
+#define I2C_SDA 6          // D4 = GPIO6
+#define I2C_SCL 7          // D5 = GPIO7
 
-// SPI for RC522 RFID (zgodnie z mapowaniem D-pinów)
-#define RFID_SS_PIN 2      // D2 = GPIO3 - CS/SDA pin
-#define RFID_RST_PIN 1     // D1 = GPIO2 - RST pin
-#define RFID_MISO_PIN 9    // D9 = GPIO8 - MISO
-#define RFID_MOSI_PIN 10   // D10 = GPIO9 - MOSI
-#define RFID_SCK_PIN 8     // D8 = GPIO7 - SCK
+// SPI for RC522 RFID
+#define RFID_SS_PIN 4      // D2 = GPIO4
+#define RFID_RST_PIN 3     // D1 = GPIO3
+#define RFID_MISO_PIN 9    // D9 = GPIO9
+#define RFID_MOSI_PIN 10   // D10 = GPIO10
+#define RFID_SCK_PIN 8     // D8 = GPIO8
 
 // Lock Control
-#define LOCK_MOSFET_PIN 3  // D3 = GPIO4 - sterowanie MOSFETem
+#define LOCK_MOSFET_PIN 2  // D0 = GPIO2 (has pull-down during boot - prevents unlock on reset)
 
 // Buzzer
-#define BUZZER_PIN 0  // D0 = GPIO1 - buzzer
+#define BUZZER_PIN 21      // D6 = GPIO21
 #define ENABLE_BUZZER 0
 
 // Vibration Sensor (Waveshare 9536)
-#define VIBRATION_SENSOR_PIN 6  // D6 (TX pin) - wejście czujnika wstrząsów
+#define VIBRATION_SENSOR_PIN 21 // D6 = GPIO21
 #define ENABLE_VIBRATION_SENSOR 0
 
 // Keypad Configuration (PCF8574) - MOD-01681 12-key keypad

@@ -66,13 +66,25 @@
 
                 <div class="stats-grid" style="margin-bottom: 0;">
                     <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
-                        <div class="stat-icon {{ 'green' if lock.is_locked else 'yellow' }}">
-                            {{ '🔒' if lock.is_locked else '🔓' }}
+                        <div class="stat-icon {{ 'green' if lock.is_key_present else 'yellow' }}" id="lockIcon">
+                            {% if lock.is_key_present %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                            </svg>
+                            {% else %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            {% endif %}
                         </div>
                         <div class="stat-info">
                             <div class="stat-label">Status domku</div>
-                            <div class="stat-value" style="font-size: 24px;">
-                                {{ 'Zajęty' if lock.is_locked else 'Wolny' }}
+                            <div class="stat-value" id="lockStatusText" style="font-size: 24px;">
+                                {{ 'Zajęty' if not lock.is_key_present else 'Wolny' }}
                             </div>
                         </div>
                     </div>
@@ -124,7 +136,7 @@
                             <tr>
                                 <td>{{ '🔢 PIN' if access.type == 'pin' else '📇 RFID' }}</td>
                                 <td><code>{{ access.identifier }}</code></td>
-                                 <td>{% if access.type == 'pin' %}Kod PIN{% else %}Kod RFID{% endif %}</td>
+                                <td>{% if access.type == 'pin' %}Kod PIN{% else %}Kod RFID{% endif %}</td>
                                 <td>{{ access.valid_from }}</td>
                                 <td>{{ access.valid_to or 'Bezterminowy' }}</td>
                                 <td>
@@ -134,55 +146,58 @@
                                     <span class="text-error">❌ Nieaktywny</span>
                                     {% endif %}
                                 </td>
-                                 <td>
-                                     <button class="btn btn-secondary btn-sm" onclick="editAccess(this)" data-id="{{ access.id }}" data-type="{{ access.type }}" data-identifier="{{ access.identifier }}" data-description="{{ access.description }}">
-                                         Edytuj
-                                     </button>
-                                 </td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="editAccess(this)"
+                                        data-id="{{ access.id }}" data-type="{{ access.type }}"
+                                        data-identifier="{{ access.identifier }}"
+                                        data-description="{{ access.description }}">
+                                        Edytuj
+                                    </button>
+                                </td>
                             </tr>
                             {% endfor %}
 
-                             {% if not access_methods %}
-                             <tr>
-                                 <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
-                                     Brak zdefiniowanych metod dostępu
-                                 </td>
-                             </tr>
-                             {% endif %}
+                            {% if not access_methods %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--dark-gray);">
+                                    Brak zdefiniowanych metod dostępu
+                                </td>
+                            </tr>
+                            {% endif %}
 
-                             {% if not has_pin %}
-                             <!-- Add PIN Row -->
-                             <tr id="addPinRow">
-                                 <td>🔢 PIN</td>
-                                 <td>nie ustalono</td>
-                                 <td>Kod PIN</td>
-                                 <td>-</td>
-                                 <td>-</td>
-                                 <td><span class="text-error">❌ Nieaktywny</span></td>
-                                 <td>
-                                     <button class="btn btn-secondary btn-sm" onclick="showAddPinModal()">
-                                         + Dodaj
-                                     </button>
-                                 </td>
-                             </tr>
-                             {% endif %}
+                            {% if not has_pin %}
+                            <!-- Add PIN Row -->
+                            <tr id="addPinRow">
+                                <td>🔢 PIN</td>
+                                <td>nie ustalono</td>
+                                <td>Kod PIN</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="text-error">❌ Nieaktywny</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="showAddPinModal()">
+                                        + Dodaj
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endif %}
 
-                             {% if not has_rfid %}
-                             <!-- Add RFID Row -->
-                             <tr id="addRfidRow">
-                                 <td>📇 RFID</td>
-                                 <td>nie ustalono</td>
-                                 <td>Kod RFID</td>
-                                 <td>-</td>
-                                 <td>-</td>
-                                 <td><span class="text-error">❌ Nieaktywny</span></td>
-                                 <td>
-                                     <button class="btn btn-secondary btn-sm" onclick="showAddRfidModal()">
-                                         + Dodaj
-                                     </button>
-                                 </td>
-                             </tr>
-                             {% endif %}
+                            {% if not has_rfid %}
+                            <!-- Add RFID Row -->
+                            <tr id="addRfidRow">
+                                <td>📇 RFID</td>
+                                <td>nie ustalono</td>
+                                <td>Kod RFID</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="text-error">❌ Nieaktywny</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="showAddRfidModal()">
+                                        + Dodaj
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -340,19 +355,19 @@
                         code: code,
                         lock_id: {{ lock.id }}
                     })
-                });
+        });
 
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const error = await response.json();
-                    document.getElementById('addPinError').textContent = 'Błąd: ' + (error.detail || 'Nie udało się dodać PIN');
-                    document.getElementById('addPinError').style.display = 'block';
-                }
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            document.getElementById('addPinError').textContent = 'Błąd: ' + (error.detail || 'Nie udało się dodać PIN');
+            document.getElementById('addPinError').style.display = 'block';
+        }
             } catch (error) {
-                document.getElementById('addPinError').textContent = 'Błąd połączenia: ' + error.message;
-                document.getElementById('addPinError').style.display = 'block';
-            }
+            document.getElementById('addPinError').textContent = 'Błąd połączenia: ' + error.message;
+            document.getElementById('addPinError').style.display = 'block';
+        }
         }
 
         async function saveLockRfid() {
@@ -373,17 +388,17 @@
                         card_uid: uid,
                         lock_id: {{ lock.id }}
                     })
-                });
+        });
 
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const error = await response.json();
-                    alert('Błąd: ' + (error.detail || 'Nie udało się dodać RFID'));
-                }
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert('Błąd: ' + (error.detail || 'Nie udało się dodać RFID'));
+        }
             } catch (error) {
-                alert('Błąd połączenia: ' + error.message);
-            }
+            alert('Błąd połączenia: ' + error.message);
+        }
         }
 
         function editAccess(button) {
@@ -487,6 +502,86 @@
             closeDeleteModal();
             await performDelete();
         }
+
+        // Real-time updates via Server-Sent Events (SSE)
+        let eventSource = null;
+        const currentLockId = {{ lock.id }};
+
+        function connectSSE() {
+            eventSource = new EventSource('/api/v1/events');
+
+            eventSource.onmessage = function (event) {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.type === 'status_update' && message.data.lock_id === currentLockId) {
+                        updateLockStatus(message.data);
+                    }
+                } catch (error) {
+                    console.error('SSE parse error:', error);
+                }
+            };
+
+            eventSource.onerror = function (error) {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+
+                // Reconnect after 5 seconds
+                setTimeout(connectSSE, 5000);
+            };
+
+            console.log('SSE connected - real-time updates enabled for lock detail');
+        }
+
+        function updateLockStatus(data) {
+            // Update lock icon (SVG locked/unlocked)
+            const lockIcon = document.getElementById('lockIcon');
+            if (lockIcon) {
+                if (data.is_key_present) {
+                    // Unlocked icon
+                    lockIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                    </svg>`;
+                    lockIcon.className = 'stat-icon green';
+                } else {
+                    // Locked icon
+                    lockIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>`;
+                    lockIcon.className = 'stat-icon yellow';
+                }
+            }
+
+
+            // Update large status text
+            const lockStatusText = document.getElementById('lockStatusText');
+            if (lockStatusText) {
+                lockStatusText.textContent = data.is_key_present ? 'Wolny' : 'Zajęty';
+            }
+
+            // Update online/offline status
+            const onlineStatValue = document.querySelector('.stat-card:nth-child(2) .stat-value');
+            const onlineStatIcon = document.querySelector('.stat-card:nth-child(2) .stat-icon');
+            if (onlineStatValue && onlineStatIcon) {
+                onlineStatValue.textContent = data.is_online ? 'Online' : 'Offline';
+                onlineStatIcon.textContent = data.is_online ? '🌐' : '⚠️';
+                onlineStatIcon.className = data.is_online ? 'stat-icon green' : 'stat-icon red';
+            }
+
+            console.log(`✅ Updated lock detail: online=${data.is_online}, key=${data.is_key_present}`);
+        }
+
+        // Connect to SSE on page load
+        connectSSE();
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
     </script>
 
     <!-- Delete Confirmation Modal -->
@@ -529,7 +624,8 @@
             <div class="modal-body">
                 <input type="hidden" id="editAccessId">
                 <input type="hidden" id="editAccessType">
-                <div id="editAccessError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
+                <div id="editAccessError" class="error-message" style="color: red; margin-bottom: 10px; display: none;">
+                </div>
                 <div class="form-group" id="editCodeGroup">
                     <label>Kod PIN</label>
                     <input type="text" id="editAccessCode" class="form-control" placeholder="1234">
@@ -562,7 +658,8 @@
                 <button class="modal-close" onclick="closeModal('addPinModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="addPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
+                <div id="addPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;">
+                </div>
                 <div class="form-group">
                     <label>Kod PIN</label>
                     <input type="text" id="pinCode" class="form-control" placeholder="1234">

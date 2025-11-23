@@ -67,14 +67,14 @@ class AccessCodeResponse(AccessCodeBase):
 class RFIDCardBase(BaseModel):
     card_uid: str
     name: Optional[str] = None
-    card_type: str = "access"  # 'master', 'key_tag', 'access'
+    card_type: str = "key_tag"  # Only 'key_tag' allowed (for presence detection)
     is_active: bool = True
     valid_from: Optional[datetime] = None
     valid_until: Optional[datetime] = None
 
 
 class RFIDCardCreate(RFIDCardBase):
-    lock_id: Optional[int] = None  # Optional for Master Cards
+    lock_id: Optional[int] = None  # Required for key_tag
 
 
 class RFIDCardUpdate(BaseModel):

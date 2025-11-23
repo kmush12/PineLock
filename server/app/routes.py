@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Optional
 from datetime import datetime
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
 
 from app.database import get_session
 from app.models import Lock, AccessCode, RFIDCard, AccessLog
@@ -17,8 +20,47 @@ from app.schemas import (
 )
 from app.mqtt_client import mqtt_client
 from app.services import sync_device
+from app.sse import sse_broadcaster
 
 router = APIRouter()
+
+
+# SSE Endpoint for real-time updates
+@router.get("/events")
+async def sse_endpoint():
+    """Server-Sent Events endpoint for real-time lock status updates."""
+    async def event_generator():
+        # Create a queue for this client
+        queue = asyncio.Queue()
+        sse_broadcaster.add_client(queue)
+        
+        try:
+            while True:
+                # Wait for events
+                message = await queue.get()
+                
+                # Format as SSE
+                event_data = json.dumps(message)
+                yield f"data: {event_data}\n\n"
+                
+        except asyncio.CancelledError:
+            # Client disconnected
+            sse_broadcaster.remove_client(queue)
+            raise
+        except Exception as e:
+            logging.error(f"SSE error: {e}")
+            sse_broadcaster.remove_client(queue)
+            raise
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable nginx buffering
+        }
+    )
 
 
 # Lock Endpoints
@@ -317,24 +359,8 @@ async def create_rfid_card(
     session: AsyncSession = Depends(get_session)
 ):
     """Create a new RFID card."""
-    # Handle Master Cards (no lock_id required, only 1 allowed)
-    if rfid_card.card_type == 'master':
-        if rfid_card.lock_id is not None:
-             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Master cards cannot be assigned to a specific lock")
-        
-        # Check for existing Master RFID (only 1 allowed)
-        result = await session.execute(
-            select(RFIDCard).where(RFIDCard.card_type == 'master')
-        )
-        existing_master = result.scalar_one_or_none()
-        if existing_master:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Master RFID already exists. Only one Master RFID is allowed. Please delete the existing one first."
-            )
-    
-    # Handle Key Tags (for key presence detection only)
-    elif rfid_card.card_type == 'key_tag':
+    # Only allow key_tag type (for key presence detection)
+    if rfid_card.card_type == 'key_tag':
         if rfid_card.lock_id is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lock ID is required for key tags")
             
@@ -357,28 +383,21 @@ async def create_rfid_card(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Key Tag already exists for this lock. Only one Key Tag per lock is allowed. Please delete the existing one first."
             )
-    
-    # Reject 'access' card type (not in new model)
     else:
+        # Reject invalid card types
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid card type. Only 'master' and 'key_tag' are allowed."
+            detail="Invalid card type. Only 'key_tag' is allowed. Use lock-specific RFID cards for access control."
         )
+
     
     db_card = RFIDCard(**rfid_card.dict())
     session.add(db_card)
     await session.commit()
     await session.refresh(db_card)
     
-    # Trigger Sync
-    if rfid_card.card_type == 'master':
-        # Sync ALL locks for master card
-        result = await session.execute(select(Lock))
-        locks = result.scalars().all()
-        for lock in locks:
-            await sync_device(lock.device_id)
-    elif rfid_card.lock_id:
-        # Sync specific lock
+    # Trigger Sync for the specific lock
+    if rfid_card.lock_id:
         result = await session.execute(select(Lock).where(Lock.id == rfid_card.lock_id))
         lock = result.scalar_one_or_none()
         if lock:

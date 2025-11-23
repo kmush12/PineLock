@@ -384,6 +384,59 @@ body {
     color: #721c24;
 }
 
+.status-free {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.status-occupied {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+/* Status Icon Containers */
+.status-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.status-icon-container.status-free {
+    background: var(--success-bg);
+}
+
+.status-icon-container.status-free svg {
+    stroke: var(--success-text);
+}
+
+.status-icon-container.status-occupied {
+    background: var(--warning-bg);
+}
+
+.status-icon-container.status-occupied svg {
+    stroke: var(--warning-text);
+}
+
+.status-icon-container.status-online {
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.status-icon-container.status-online svg {
+    stroke: #4CAF50;
+}
+
+.status-icon-container.status-offline {
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.status-icon-container.status-offline svg {
+    stroke: #f44336;
+}
+
+
 .lock-card-body {
     margin-bottom: 16px;
 }
@@ -612,6 +665,31 @@ body {
         transform: rotate(360deg);
     }
 }
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

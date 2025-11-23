@@ -90,43 +90,6 @@
                         {% endif %}
                     </div>
                 </div>
-
-                <!-- Master RFID (single) -->
-                <div class="lock-card">
-                    <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3>Master RFID</h3>
-                        {% if master_rfid %}
-                        <button
-                            style="background: #4CAF50; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500;"
-                            data-id="{{ master_rfid.id }}" data-name="{{ master_rfid.name }}"
-                            data-uid="{{ master_rfid.card_uid }}"
-                            onclick="openEditMasterCardModal(this.dataset.id, this.dataset.name, this.dataset.uid)">
-                            Edytuj
-                        </button>
-                        {% else %}
-                        <button class="btn-primary" onclick="openAddMasterCardModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                            Dodaj
-                        </button>
-                        {% endif %}
-                    </div>
-                    <div class="card-content">
-                        {% if master_rfid %}
-                        <div class="list-item">
-                            <div class="item-info">
-                                <span class="item-title">{{ master_rfid.name or 'Bez nazwy' }}</span>
-                                <span class="item-subtitle">{{ master_rfid.card_uid }}</span>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="empty-list">Brak Master RFID</div>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
 
             <!-- Locks Access Section -->
@@ -257,30 +220,6 @@
     </div>
 </div>
 
-<!-- Add Master RFID Modal -->
-<div class="modal" id="addMasterCardModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Master RFID</h3>
-            <button class="close-btn" onclick="closeModal('addMasterCardModal')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>UID Karty</label>
-                <input type="text" id="masterCardUID" class="form-control" placeholder="A1:B2:C3:D4">
-            </div>
-        </div>
-        <div class="modal-footer" style="display: flex; gap: 10px;">
-            <button
-                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
-                onclick="closeModal('addMasterCardModal')">Anuluj</button>
-            <button
-                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
-                onclick="saveMasterCard()">Zapisz</button>
-        </div>
-    </div>
-</div>
-
 <!-- Add Lock PIN Modal -->
 <div class="modal" id="addPinModal">
     <div class="modal-content">
@@ -372,7 +311,8 @@
         </div>
         <div class="modal-body">
             <input type="hidden" id="editMasterPinId">
-            <div id="editMasterPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;"></div>
+            <div id="editMasterPinError" class="error-message" style="color: red; margin-bottom: 10px; display: none;">
+            </div>
             <div class="form-group">
                 <label>Kod PIN (4-10 cyfr)</label>
                 <input type="text" id="editMasterPinCode" class="form-control" placeholder="1234">
@@ -385,31 +325,6 @@
             <button
                 style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
                 onclick="updateMasterPin()">Zapisz</button>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Master RFID Modal -->
-<div class="modal" id="editMasterCardModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Master RFID</h3>
-            <button class="close-btn" onclick="closeModal('editMasterCardModal')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <input type="hidden" id="editMasterCardId">
-            <div class="form-group">
-                <label>UID Karty</label>
-                <input type="text" id="editMasterCardUID" class="form-control" placeholder="A1:B2:C3:D4">
-            </div>
-        </div>
-        <div class="modal-footer" style="display: flex; gap: 10px;">
-            <button
-                style="background: #666; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
-                onclick="closeModal('editMasterCardModal')">Anuluj</button>
-            <button
-                style="background: #4CAF50; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1;"
-                onclick="updateMasterCard()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -537,11 +452,6 @@
         document.getElementById('addMasterPinModal').classList.add('active');
     }
 
-    function openAddMasterCardModal() {
-        document.getElementById('masterCardUID').value = '';
-        document.getElementById('addMasterCardModal').classList.add('active');
-    }
-
     function openAddPinModal(lockId, lockName) {
         document.getElementById('pinLockId').value = lockId;
         document.getElementById('pinLockName').textContent = lockName;
@@ -573,11 +483,6 @@
         document.getElementById('editMasterPinModal').classList.add('active');
     }
 
-    function openEditMasterCardModal(cardId, name, uid) {
-        document.getElementById('editMasterCardId').value = cardId;
-        document.getElementById('editMasterCardUID').value = uid || '';
-        document.getElementById('editMasterCardModal').classList.add('active');
-    }
 
     function openEditPinModal(pinId, lockId, lockName, name, code) {
         document.getElementById('editPinId').value = pinId;
@@ -625,30 +530,6 @@
         }
     }
 
-    async function updateMasterCard() {
-        const id = document.getElementById('editMasterCardId').value;
-        const uid = document.getElementById('editMasterCardUID').value;
-
-        if (!uid) return alert('Podaj UID karty');
-
-        try {
-            const response = await fetch(`/api/v1/rfid-cards/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'Master RFID', card_uid: uid })
-            });
-
-            if (response.ok) {
-                window.location.reload();
-            } else {
-                const error = await response.json();
-                alert('Błąd: ' + error.detail);
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Wystąpił błąd');
-        }
-    }
 
     async function updateLockPin() {
         const id = document.getElementById('editPinId').value;
@@ -699,35 +580,6 @@
                     name: 'Master PIN',
                     code: code,
                     lock_id: null // Master PIN
-                })
-            });
-
-            if (response.ok) {
-                window.location.reload();
-            } else {
-                const error = await response.json();
-                alert('Błąd: ' + error.detail);
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Wystąpił błąd');
-        }
-    }
-
-    async function saveMasterCard() {
-        const uid = document.getElementById('masterCardUID').value;
-
-        if (!uid) return alert('Podaj UID karty');
-
-        try {
-            const response = await fetch('/api/v1/rfid-cards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: 'Master RFID',
-                    card_uid: uid,
-                    card_type: 'master',
-                    lock_id: null
                 })
             });
 

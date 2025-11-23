@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.database import async_session_maker
 from app.models import Lock, AccessLog, PendingDevice
 from app.schemas import MQTTAccessEvent, MQTTStatusUpdate
+from app.sse import sse_broadcaster
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,15 @@ async def handle_status_update(device_id: str, data: dict):
                 lock.last_seen = datetime.utcnow()
                 await session.commit()
                 logger.info(f"Updated status for lock {device_id}: locked={status.is_locked}, key_present={status.is_key_present}")
+                
+                # Broadcast status update to all connected SSE clients
+                await sse_broadcaster.broadcast("status_update", {
+                    "lock_id": lock.id,
+                    "device_id": device_id,
+                    "is_locked": lock.is_locked,
+                    "is_key_present": lock.is_key_present,
+                    "is_online": lock.is_online
+                })
             else:
                 logger.warning(f"Received status from unknown device: {device_id}")
                 await _track_pending_device(session, device_id)

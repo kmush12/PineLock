@@ -1,52 +1,45 @@
 # Seeed XIAO ESP32C3 - Mapowanie GPIO
 
-## Mapowanie pinów D → GPIO
+## Tabela Pinów (Standard Xiao ESP32C3)
 
-| Pin na płytce | GPIO | Użycie w PineLock |
-|---------------|------|-------------------|
-| D0 | GPIO 0 | - |
-| D1 | GPIO 1 | - |
-| D2 | GPIO 2 | RFID RST |
-| D3 | GPIO 3 | RFID SS |
-| D4 | GPIO 6 | **I2C SDA** (Klawiatura, RTC) |
-| D5 | GPIO 7 | **I2C SCL** (Klawiatura, RTC) |
-| D6 | GPIO 21 | - |
-| D7 | GPIO 20 | - |
-| D8 | GPIO 8 | RFID SCK |
-| D9 | GPIO 9 | - |
-| D10 | GPIO 10 | **Zamek (MOSFET)** |
+|   D-pin | Analog | Funkcja dodatkowa | GPIO                                |
+| ------: | :----: | :---------------- | :---------------------------------- |
+|  **D0** |   A0   | **Zamek (MOSFET)**| **GPIO2** *(pull-down podczas boot)*|
+|  **D1** |   A1   | RFID RST          | **GPIO3**                           |
+|  **D2** |   A2   | RFID SS           | **GPIO4**                           |
+|  **D3** |   A3   | —                 | **GPIO5**                           |
+|  **D4** |   A4   | **I2C SDA**       | **GPIO6**                           |
+|  **D5** |   A5   | **I2C SCL**       | **GPIO7**                           |
+|  **D6** |    —   | Buzzer            | **GPIO21**                          |
+|  **D7** |    —   | **RX** (UART)     | **GPIO20**                          |
+|  **D8** |   A8   | **SPI SCK**       | **GPIO8**                           |
+|  **D9** |   A9   | **SPI MISO**      | **GPIO9**                           |
+| **D10** |   A10  | **SPI MOSI**      | **GPIO10**                          |
 
-## Piny SPI (RFID - MFRC522)
+## Konfiguracja w PineLock
 
-| Funkcja | GPIO | Pin |
-|---------|------|-----|
-| MISO | GPIO 4 | - |
-| MOSI | GPIO 5 | - |
-| SCK | GPIO 8 | D8 |
-| SS | GPIO 3 | D3 |
-| RST | GPIO 2 | D2 |
+### I2C (Klawiatura + RTC)
+- **SDA**: D4 (GPIO 6)
+- **SCL**: D5 (GPIO 7)
 
-## Piny I2C (Klawiatura 4x4 + RTC DS3231)
+### SPI (RFID - RC522)
+- **SS**: D2 (GPIO 4)
+- **RST**: D1 (GPIO 3)
+- **SCK**: D8 (GPIO 8)
+- **MISO**: D9 (GPIO 9)
+- **MOSI**: D10 (GPIO 10)
 
-| Funkcja | GPIO | Pin |
-|---------|------|-----|
-| SDA | GPIO 6 | D4 |
-| SCL | GPIO 7 | D5 |
+### Wyjścia Sterujące
+- **Zamek (MOSFET)**: D0 (GPIO 2) - *Ma pull-down podczas boot - bezpieczne*
+- **Buzzer**: D6 (GPIO 21)
 
-**Adres I2C:**
-- Klawiatura (PCF8574): `0x20` (domyślnie)
-- RTC (DS3231): `0x68`
+### Wejścia
+- **Czujnik Wstrząsów**: *Nieużywany* - *Opcjonalnie*
 
-## Sterowanie zamkiem
-
-| Funkcja | GPIO | Pin | Stan |
-|---------|------|-----|------|
-| MOSFET Gate | GPIO 10 | D10 | HIGH = Otwarty, LOW = Zamknięty |
 
 ---
 
 ## Uwagi
-
-1. **Klawiatura:** Jeśli firmware pokazuje `ERROR: PCF8574 not found!`, sprawdź połączenie SDA/SCL lub adres I2C (może być 0x27 zamiast 0x20).
-2. **RFID:** Wymaga zasilania 3.3V, GND i 5 przewodów SPI.
-3. **Zamek:** Używa MOSFET do sterowania elektromagnesem (zalecane 12V).
+1. **Zmiana sprzętowa**: Zamek został przeniesiony z D10 na D3, aby zwolnić pin MOSI dla RFID.
+2. **Bezpieczeństwo**: Zamek przeniesiony z D6 (GPIO21) na D0 (GPIO2), ponieważ GPIO2 ma sprzętowy pull-down podczas boot ESP32 - zapobiega to przypadkowemu otwarciu zamka podczas resetu/upload firmware.
+3. **Klawiatura**: Adres I2C domyślnie `0x20`.

@@ -52,7 +52,7 @@ class RFIDCard(Base):
     lock_id = Column(Integer, ForeignKey("locks.id"), nullable=True)  # Nullable for Master Cards
     card_uid = Column(String, nullable=False, index=True)
     name = Column(String)
-    card_type = Column(String, default="access")  # 'master', 'key_tag', 'access'
+    card_type = Column(String, default="key_tag")  # Only 'key_tag' allowed
     is_active = Column(Boolean, default=True)
     valid_from = Column(DateTime, nullable=True)
     valid_until = Column(DateTime, nullable=True)
