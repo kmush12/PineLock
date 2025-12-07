@@ -45,16 +45,37 @@
                     {% if lock.is_online %}
                     {% if lock.is_locked %}
                     <button class="btn btn-success" onclick="toggleLock('unlock')">
-                        🔓 Otwórz domek
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="vertical-align: middle; margin-right: 4px;">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                        </svg>
+                        Otwórz domek
                     </button>
                     {% else %}
                     <button class="btn btn-danger" onclick="toggleLock('lock')">
-                        🔒 Zamknij domek
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="vertical-align: middle; margin-right: 4px;">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Zamknij domek
                     </button>
                     {% endif %}
                     {% else %}
                     <button class="btn" style="background: #ccc; cursor: not-allowed;" disabled>
-                        ⚠️ Urządzenie offline
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="vertical-align: middle; margin-right: 4px;">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                            </path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Urządzenie offline
                     </button>
                     {% endif %}
                 </div>
@@ -91,7 +112,25 @@
 
                     <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
                         <div class="stat-icon {{ 'green' if lock.is_online else 'red' }}">
-                            {{ '🌐' if lock.is_online else '⚠️' }}
+                            {% if lock.is_online %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path
+                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                                </path>
+                            </svg>
+                            {% else %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                                </path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            {% endif %}
                         </div>
                         <div class="stat-info">
                             <div class="stat-label">Połączenie</div>
@@ -103,11 +142,36 @@
                 </div>
 
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--light-gray);">
-                    <p><strong>📍 Lokalizacja:</strong> {{ lock.location }}</p>
-                    <p><strong>🆔 Device ID:</strong> <code>{{ lock.device_id }}</code></p>
-                    <p><strong>📝 Opis:</strong> {{ lock.description or 'Brak opisu' }}</p>
+                    <p><strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="vertical-align: middle; margin-right: 4px;">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>Lokalizacja:</strong> {{ lock.location }}</p>
+                    <p><strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="vertical-align: middle; margin-right: 4px;">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>Device ID:</strong> <code>{{ lock.device_id }}</code></p>
+                    <p><strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="vertical-align: middle; margin-right: 4px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>Opis:</strong> {{ lock.description or 'Brak opisu' }}</p>
                     {% if lock.last_seen %}
-                    <p><strong>⏰ Ostatnio widziany:</strong> {{ lock.last_seen }}</p>
+                    <p><strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="vertical-align: middle; margin-right: 4px;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>Ostatnio widziany:</strong> {{ lock.last_seen }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -380,12 +444,13 @@
             }
 
             try {
-                const response = await fetch('/api/v1/access-codes', {
+                const response = await fetch('/api/v1/rfid-cards', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: name,
                         card_uid: uid,
+                        card_type: 'key_tag',
                         lock_id: {{ lock.id }}
                     })
         });
@@ -460,7 +525,8 @@
             }
 
             try {
-                const response = await fetch(`/api/v1/access-codes/${id}`, {
+                const endpoint = type === 'rfid' ? `/api/v1/rfid-cards/${id}` : `/api/v1/access-codes/${id}`;
+                const response = await fetch(endpoint, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
@@ -566,7 +632,19 @@
             const onlineStatIcon = document.querySelector('.stat-card:nth-child(2) .stat-icon');
             if (onlineStatValue && onlineStatIcon) {
                 onlineStatValue.textContent = data.is_online ? 'Online' : 'Offline';
-                onlineStatIcon.textContent = data.is_online ? '🌐' : '⚠️';
+                if (data.is_online) {
+                    onlineStatIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>`;
+                } else {
+                    onlineStatIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>`;
+                }
                 onlineStatIcon.className = data.is_online ? 'stat-icon green' : 'stat-icon red';
             }
 

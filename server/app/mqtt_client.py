@@ -3,6 +3,7 @@ import json
 import logging
 import asyncio
 import inspect
+import os
 from typing import Callable, Optional
 from concurrent.futures import ThreadPoolExecutor
 from app.config import settings
@@ -22,7 +23,9 @@ class MQTTClient:
     def connect(self):
         """Connect to MQTT broker."""
         try:
-            self.client = mqtt.Client(client_id="pinelock_server")
+            # Use unique client ID per process to avoid conflicts with uvicorn reload
+            client_id = f"pinelock_server_{os.getpid()}"
+            self.client = mqtt.Client(client_id=client_id)
             
             # Set callbacks
             self.client.on_connect = self._on_connect

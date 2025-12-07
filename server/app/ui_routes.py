@@ -105,7 +105,32 @@ async def locks_list(request: Request, session: AsyncSession = Depends(get_sessi
     if request.query_params.get("deleted") == "1":
         message = "✅ Domek został usunięty"
 
+    # Get recent access logs
+    from app.models import AccessLog
+    logs_result = await session.execute(
+        select(AccessLog)
+        .join(Lock)
+        .order_by(AccessLog.timestamp.desc())
+        .limit(10)
+    )
+    access_logs = logs_result.scalars().all()
+    
+    # Format logs for display
     recent_logs = []
+    for log in access_logs:
+        # Get lock info
+        lock_result = await session.execute(select(Lock).where(Lock.id == log.lock_id))
+        lock = lock_result.scalar_one_or_none()
+        
+        if lock:
+            recent_logs.append({
+                'timestamp': log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '-',
+                'lock_name': lock.name,
+                'lock_id': lock.id,
+                'access_type': log.access_type,
+                'access_method': log.access_method,
+                'success': log.success
+            })
     
     return templates.TemplateResponse(
         "dashboard.html",
@@ -221,16 +246,24 @@ async def lock_detail(
                 'valid_to': None,
                 'is_active': code.is_active
             })
-        elif code.card_uid is not None:  # RFID
-            access_methods.append({
-                'id': code.id,
-                'type': 'rfid',
-                'identifier': code.card_uid,
-                'description': code.name or 'Bez nazwy',
-                'valid_from': code.created_at.strftime('%Y-%m-%d %H:%M') if code.created_at else '-',
-                'valid_to': None,
-                'is_active': code.is_active
-            })
+
+    # Fetch RFID cards for this lock
+    from app.models import RFIDCard
+    rfid_result = await session.execute(
+        select(RFIDCard).where(RFIDCard.lock_id == lock_id).order_by(RFIDCard.created_at.desc())
+    )
+    rfid_cards = rfid_result.scalars().all()
+
+    for card in rfid_cards:
+        access_methods.append({
+            'id': card.id,
+            'type': 'rfid',
+            'identifier': card.card_uid,
+            'description': card.name or 'Bez nazwy',
+            'valid_from': card.created_at.strftime('%Y-%m-%d %H:%M') if card.created_at else '-',
+            'valid_to': None,
+            'is_active': card.is_active
+        })
     
     # Check if PIN and RFID exist
     has_pin = any(m['type'] == 'pin' for m in access_methods)

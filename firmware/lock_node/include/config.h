@@ -27,7 +27,7 @@
 #define RFID_MOSI_PIN 10   // D10 = GPIO10
 #define RFID_SCK_PIN 8     // D8 = GPIO8
 
-// Lock Control
+// Lock Control 
 #define LOCK_MOSFET_PIN 2  // D0 = GPIO2 (has pull-down during boot - prevents unlock on reset)
 
 // Buzzer
