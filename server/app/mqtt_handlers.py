@@ -124,12 +124,54 @@ async def handle_sync_request(device_id: str, data: dict):
         logger.error(f"Error handling sync request: {e}")
 
 
+async def handle_alert(device_id: str, data: dict):
+    """Handle alert from device (e.g., door open too long)."""
+    try:
+        alert_type = data.get("type", "unknown")
+        message = data.get("message", "No message provided")
+        timestamp_raw = data.get("timestamp")
+        
+        timestamp = datetime.fromtimestamp(timestamp_raw) if timestamp_raw else datetime.utcnow()
+        
+        async with async_session_maker() as session:
+            # Find lock by device_id
+            result = await session.execute(
+                select(Lock).where(Lock.device_id == device_id)
+            )
+            lock = result.scalar_one_or_none()
+            
+            if lock:
+                # Create access log entry for the alert
+                log = AccessLog(
+                    lock_id=lock.id,
+                    access_type="alert",
+                    access_method=alert_type,
+                    success=False,  # Alerts are usually "failures" or warnings
+                    timestamp=timestamp
+                )
+                session.add(log)
+                
+                # Update last seen
+                lock.last_seen = datetime.utcnow()
+                lock.is_online = True
+                
+                await session.commit()
+                logger.warning(f"Logged alert for lock {device_id}: type={alert_type}, message={message}")
+            else:
+                logger.warning(f"Received alert from unknown device: {device_id}")
+                await _track_pending_device(session, device_id)
+                
+    except Exception as e:
+        logger.error(f"Error handling alert: {e}")
+
+
 def setup_mqtt_handlers(mqtt_client):
     """Register MQTT message handlers."""
     mqtt_client.register_handler("status", handle_status_update)
     mqtt_client.register_handler("access", handle_access_event)
     mqtt_client.register_handler("heartbeat", handle_heartbeat)
     mqtt_client.register_handler("sync", handle_sync_request)
+    mqtt_client.register_handler("alert", handle_alert)
 async def _track_pending_device(session, device_id: str):
     """Record or update pending domek entries."""
     clean_device_id = device_id.strip()

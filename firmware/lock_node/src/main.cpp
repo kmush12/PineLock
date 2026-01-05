@@ -802,7 +802,8 @@ void handleBuzzer() {
 #else
     if (buzzerActive) {
         unsigned long currentMillis = millis();
-        if (currentMillis >= buzzerStopTime || currentMillis < buzzerStopTime - BUZZER_WRONG_PIN_DURATION - 1000) {
+        // Check if time is up OR if millis() has wrapped around significantly
+        if (currentMillis >= buzzerStopTime || (currentMillis < buzzerStopTime && buzzerStopTime - currentMillis > 60000)) {
             digitalWrite(BUZZER_PIN, LOW);
             buzzerActive = false;
             Serial.println("Buzzer deactivated");
@@ -856,6 +857,7 @@ void handleVibration() {
                 String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/alert";
                 StaticJsonDocument<128> doc;
                 doc["type"] = "vibration";
+                doc["message"] = "Vibration detected - possible tampering";
                 doc["timestamp"] = rtc.now().unixtime();
                 
                 String jsonString;
@@ -928,8 +930,8 @@ void handleDoorSensor() {
             
             alertSent = true;
             
-            // Optional: beep buzzer once
-            activateBuzzer(200);
+            // Beep buzzer for 5 seconds
+            activateBuzzer(5000);
         }
     }
 #endif
