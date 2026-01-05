@@ -60,6 +60,7 @@ void sendKeyStatusUpdate(bool keyPresent, String cardUID);
 void handleKeypad();
 void handleRFID();
 void handleVibration();
+void handleDoorSensor();
 void controlLock(bool lock);
 char readKeypad();
 void processPINEntry(char key);
@@ -82,10 +83,13 @@ void setup() {
     esp_task_wdt_add(NULL);
     Serial.println("Watchdog configured");
     
-    // Initialize hardware
+    // Initialize hardware first
     setupHardware();
     
-    // Connect to WiFi
+    // Initialize access control (NVS)
+    accessControl.begin();
+    
+    // Start WiFi connection (non-blocking)
     setupWiFi();
     
     // Setup MQTT
@@ -112,6 +116,9 @@ void loop() {
     
     // Handle vibration detection
     handleVibration();
+    
+    // Handle door sensor
+    handleDoorSensor();
     
     // Handle buzzer
     handleBuzzer();
@@ -144,28 +151,8 @@ void setupWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED) {
-        esp_task_wdt_reset(); // Feed watchdog during WiFi connection
-        delay(500);
-        Serial.print(".");
-        attempts++;
-        if (attempts % 10 == 0) {
-            Serial.print(" [");
-            Serial.print(attempts);
-            Serial.print("] ");
-        }
-        if (attempts > 60) {
-            Serial.println("\nWiFi connection timeout! Restarting...");
-            ESP.restart();
-        }
-    }
-    
-    Serial.println("\nWiFi connected!");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-    Serial.print("Signal strength (RSSI): ");
-    Serial.println(WiFi.RSSI());
+    // Non-blocking: we just start the connection and check status later
+    Serial.println("WiFi connection started...");
 }
 
 void setupMQTT() {
@@ -237,6 +224,14 @@ void setupHardware() {
     Serial.println("Vibration sensor initialized");
 #else
     Serial.println("Vibration sensor disabled (ENABLE_VIBRATION_SENSOR=0)");
+#endif
+
+    // Initialize door sensor pin
+#if ENABLE_DOOR_SENSOR
+    pinMode(DOOR_SENSOR_PIN, INPUT_PULLUP);
+    Serial.println("Door sensor initialized");
+#else
+    Serial.println("Door sensor disabled (ENABLE_DOOR_SENSOR=0)");
 #endif
     
     Serial.println("Hardware initialization complete");
@@ -324,6 +319,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
             if (removed) {
                 sendStatusUpdate();
             }
+        } else if (action == "buzzer") {
+            activateBuzzer(2000);
+            Serial.println("Buzzer triggered via MQTT");
         } else {
             Serial.println("Unknown command action: " + action);
         }
@@ -379,13 +377,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         }
         
         Serial.println("Config sync completed!");
-        sendStatusUpdate();
     }
 }
 
 void reconnectMQTT() {
+    // Loop until we're reconnected
     while (!mqttClient.connected()) {
         esp_task_wdt_reset(); // Feed the watchdog!
+        
+        // Check WiFi status first
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("WiFi not connected, waiting...");
+            delay(1000);
+            continue;
+        }
+
         Serial.print("Attempting MQTT connection to ");
         Serial.print(MQTT_BROKER);
         Serial.print(":");
@@ -810,9 +816,17 @@ void handleVibration() {
     return;
 #else
     static bool lastVibrationState = HIGH;
+    static int vibrationCount = 0;
+    static unsigned long firstVibrationTime = 0;
     unsigned long currentMillis = millis();
     
     int vibrationState = digitalRead(VIBRATION_SENSOR_PIN);
+    
+    // Reset count if window expired
+    if (vibrationCount > 0 && (currentMillis - firstVibrationTime > VIBRATION_WINDOW_MS)) {
+        Serial.println("Vibration window expired, resetting count");
+        vibrationCount = 0;
+    }
     
     // Detect falling edge (vibration detected)
     if (vibrationState == LOW && lastVibrationState == HIGH) {
@@ -820,25 +834,103 @@ void handleVibration() {
         if (currentMillis - lastVibrationTime > VIBRATION_DEBOUNCE_MS || currentMillis < lastVibrationTime) {
             lastVibrationTime = currentMillis;
             
-            Serial.println("VIBRATION DETECTED!");
+            // Increment count
+            vibrationCount++;
+            if (vibrationCount == 1) {
+                firstVibrationTime = currentMillis;
+            }
             
-            // Activate buzzer
-            activateBuzzer(BUZZER_WRONG_PIN_DURATION);
+            Serial.print("VIBRATION DETECTED! Count: ");
+            Serial.print(vibrationCount);
+            Serial.print("/");
+            Serial.println(VIBRATION_THRESHOLD_COUNT);
             
-            // Send vibration alert via MQTT
+            // Check threshold
+            if (vibrationCount >= VIBRATION_THRESHOLD_COUNT) {
+                Serial.println("ALARM TRIGGERED!");
+                
+                // Activate buzzer
+                activateBuzzer(BUZZER_WRONG_PIN_DURATION);
+                
+                // Send vibration alert via MQTT
+                String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/alert";
+                StaticJsonDocument<128> doc;
+                doc["type"] = "vibration";
+                doc["timestamp"] = rtc.now().unixtime();
+                
+                String jsonString;
+                serializeJson(doc, jsonString);
+                mqttClient.publish(topic.c_str(), jsonString.c_str());
+                
+                Serial.println("Vibration alert sent");
+                
+                // Reset count after alarm
+                vibrationCount = 0;
+            }
+        }
+    }
+    
+    lastVibrationState = vibrationState;
+#endif
+}
+
+void handleDoorSensor() {
+#if !ENABLE_DOOR_SENSOR
+    return;
+#else
+    static bool lastDoorState = HIGH; // HIGH = Open (pullup), LOW = Closed (magnet)
+    static unsigned long lastDoorStateChange = 0;
+    static bool alertSent = false;
+    unsigned long currentMillis = millis();
+    
+    int doorState = digitalRead(DOOR_SENSOR_PIN);
+    
+    // Debounce (simple 50ms check)
+    if (doorState != lastDoorState) {
+        delay(50); // Simple blocking debounce for state change
+        if (digitalRead(DOOR_SENSOR_PIN) == doorState) {
+            lastDoorState = doorState;
+            lastDoorStateChange = currentMillis;
+            alertSent = false;
+            
+            bool isOpen = (doorState == HIGH);
+            Serial.print("Door state changed: ");
+            Serial.println(isOpen ? "OPEN" : "CLOSED");
+            
+            // Send status update
+            String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/status";
+            StaticJsonDocument<128> doc;
+            doc["is_locked"] = isLocked;
+            doc["is_door_open"] = isOpen;
+            doc["timestamp"] = rtc.now().unixtime();
+            
+            String jsonString;
+            serializeJson(doc, jsonString);
+            mqttClient.publish(topic.c_str(), jsonString.c_str());
+        }
+    }
+    
+    // Check for open door alert
+    if (doorState == HIGH && !alertSent) {
+        if (currentMillis - lastDoorStateChange > DOOR_OPEN_ALERT_MS) {
+            Serial.println("ALARM: Door open too long!");
+            
+            // Send alert
             String topic = String(MQTT_TOPIC_PREFIX) + "/" + String(DEVICE_ID) + "/alert";
             StaticJsonDocument<128> doc;
-            doc["type"] = "vibration";
+            doc["type"] = "door_open_alert";
+            doc["message"] = "Door has been open for more than 3 minutes";
             doc["timestamp"] = rtc.now().unixtime();
             
             String jsonString;
             serializeJson(doc, jsonString);
             mqttClient.publish(topic.c_str(), jsonString.c_str());
             
-            Serial.println("Vibration alert sent");
+            alertSent = true;
+            
+            // Optional: beep buzzer once
+            activateBuzzer(200);
         }
     }
-    
-    lastVibrationState = vibrationState;
 #endif
 }

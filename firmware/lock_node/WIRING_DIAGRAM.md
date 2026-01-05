@@ -107,27 +107,39 @@ MOSFET Drain ─────────────┬──> Elektrozamek (-)
 
 ---
 
+### 🚪 Kontaktron (Czujnik otwarcia) → ESP32-C3
+
+| Pin Kontaktronu | Pin ESP32-C3 | GPIO | Uwagi |
+|-----------------|--------------|------|-------|
+| **Jeden przewód** | **D7** | **GPIO20** | Sygnał (INPUT_PULLUP) |
+| **Drugi przewód** | **GND** | - | Masa |
+
+**Działanie:**
+- Magnes przy kontaktronie (drzwi zamknięte) -> Stan LOW
+- Brak magnesu (drzwi otwarte) -> Stan HIGH
+
+---
+
 ## 🗺️ Mapa pinów ESP32-C3 (Seeed XIAO)
 
 ```
-         USB-C
      ┌─────────────┐
      │             │
      │   ESP32-C3  │
      │   XIAO      │
      │             │
 ┌────┴─────────────┴────┐
-│ D0 (GPIO1)  BUZZER+   │
-│ D1 (GPIO2)  RFID_RST  │
-│ D2 (GPIO3)  RFID_SS   │
-│ D3 (GPIO4)  MOSFET    │
-│ D4 (GPIO5)  I2C_SDA   │
-│ D5 (GPIO6)  I2C_SCL   │
+│ D0 (GPIO2)  BUZZER+   │
+│ D1 (GPIO3)  RFID_RST  │
+│ D2 (GPIO4)  RFID_SS   │
+│ D3 (GPIO5)  MOSFET    │
+│ D4 (GPIO6)  I2C_SDA   │
+│ D5 (GPIO7)  I2C_SCL   │
 │ D6 (GPIO21) VIBRATION │
 │ D7 (GPIO20) -         │
-│ D8 (GPIO7)  RFID_SCK  │
-│ D9 (GPIO8)  RFID_MISO │
-│ D10(GPIO9) RFID_MOSI │
+│ D8 (GPIO8)  RFID_SCK  │
+│ D9 (GPIO9)  RFID_MISO │
+│ D10(GPIO10) RFID_MOSI │
 │ 3V3         POWER     │
 │ GND         GROUND    │
 └───────────────────────┘

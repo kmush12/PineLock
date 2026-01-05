@@ -9,13 +9,11 @@ cd firmware/lock_node
 
 # Detect USB port
 echo "Detecting USB port..."
-if [ -e /dev/ttyACM0 ]; then
-    USB_PORT=/dev/ttyACM0
-elif [ -e /dev/ttyUSB0 ]; then
-    USB_PORT=/dev/ttyUSB0
-else
+USB_PORT=$(ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/tty | head -n 1)
+
+if [ -z "$USB_PORT" ]; then
     echo "❌ No USB device found. Please connect the device and try again."
-    echo "   Looking for /dev/ttyACM0 or /dev/ttyUSB0"
+    echo "   Looking for /dev/ttyACM* or /dev/ttyUSB*"
     exit 1
 fi
 

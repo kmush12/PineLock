@@ -87,30 +87,6 @@
 
                 <div class="stats-grid" style="margin-bottom: 0;">
                     <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
-                        <div class="stat-icon {{ 'green' if lock.is_key_present else 'yellow' }}" id="lockIcon">
-                            {% if lock.is_key_present %}
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-                            </svg>
-                            {% else %}
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            {% endif %}
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-label">Status domku</div>
-                            <div class="stat-value" id="lockStatusText" style="font-size: 24px;">
-                                {{ 'Zajęty' if not lock.is_key_present else 'Wolny' }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
                         <div class="stat-icon {{ 'green' if lock.is_online else 'red' }}">
                             {% if lock.is_online %}
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -136,6 +112,55 @@
                             <div class="stat-label">Połączenie</div>
                             <div class="stat-value" style="font-size: 24px;">
                                 {{ 'Online' if lock.is_online else 'Offline' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
+                        <div class="stat-icon {{ 'red' if lock.is_door_open else 'green' }}" id="doorIcon">
+                            {% if lock.is_door_open %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 21h18" />
+                                <path d="M5 21V7l8-4 8 4v14" />
+                                <path d="M5 7l8-4" />
+                            </svg>
+                            {% else %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="9" y1="3" x2="9" y2="21" />
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Drzwiczki</div>
+                            <div class="stat-value" id="doorStatusText" style="font-size: 24px;">
+                                {{ 'Otwarte' if lock.is_door_open else 'Zamknięte' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="box-shadow: none; border: 1px solid var(--light-gray);">
+                        <div class="stat-icon {{ 'green' if lock.is_key_present else 'yellow' }}" id="lockIcon">
+                            {% if lock.is_key_present %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                            </svg>
+                            {% else %}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Klucz</div>
+                            <div class="stat-value" id="lockStatusText" style="font-size: 24px;">
+                                {{ 'Obecny' if lock.is_key_present else 'Brak' }}
                             </div>
                         </div>
                     </div>
@@ -624,7 +649,7 @@
             // Update large status text
             const lockStatusText = document.getElementById('lockStatusText');
             if (lockStatusText) {
-                lockStatusText.textContent = data.is_key_present ? 'Wolny' : 'Zajęty';
+                lockStatusText.textContent = data.is_key_present ? 'Obecny' : 'Brak';
             }
 
             // Update online/offline status
@@ -648,7 +673,28 @@
                 onlineStatIcon.className = data.is_online ? 'stat-icon green' : 'stat-icon red';
             }
 
-            console.log(`✅ Updated lock detail: online=${data.is_online}, key=${data.is_key_present}`);
+            // Update door status
+            const doorStatusText = document.getElementById('doorStatusText');
+            const doorIcon = document.getElementById('doorIcon');
+            if (doorStatusText && doorIcon) {
+                doorStatusText.textContent = data.is_door_open ? 'Otwarte' : 'Zamknięte';
+                if (data.is_door_open) {
+                    doorIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18"/>
+                        <path d="M5 21V7l8-4 8 4v14"/>
+                        <path d="M5 7l8-4"/>
+                    </svg>`;
+                    doorIcon.className = 'stat-icon red';
+                } else {
+                    doorIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                    </svg>`;
+                    doorIcon.className = 'stat-icon green';
+                }
+            }
+
+            console.log(`✅ Updated lock detail: online=${data.is_online}, key=${data.is_key_present}, door=${data.is_door_open}`);
         }
 
         // Connect to SSE on page load

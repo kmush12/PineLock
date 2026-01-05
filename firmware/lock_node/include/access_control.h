@@ -35,6 +35,7 @@ private:
 
 public:
     AccessControl(RTC_DS3231* rtcInstance);
+    void begin();
     
     // PIN code management
     bool addPINCode(const char* code, bool isActive = true, bool hasTimeLimit = false,

@@ -7,7 +7,9 @@ AccessControl::AccessControl(RTC_DS3231* rtcInstance) {
     rfidCardCount = 0;
     clearPINCodes();
     clearRFIDCards();
-    
+}
+
+void AccessControl::begin() {
     // Load saved data from EEPROM
     loadFromEEPROM();
 }

@@ -18,6 +18,7 @@ class Lock(Base):
     is_online = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=True)
     is_key_present = Column(Boolean, default=False)  # RFID key presence detection
+    is_door_open = Column(Boolean, default=False)    # Door open/closed status
     last_seen = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 

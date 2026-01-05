@@ -25,10 +25,12 @@ async def handle_status_update(device_id: str, data: dict):
                 lock.is_locked = status.is_locked
                 if status.is_key_present is not None:
                     lock.is_key_present = status.is_key_present
+                if status.is_door_open is not None:
+                    lock.is_door_open = status.is_door_open
                 lock.is_online = True
                 lock.last_seen = datetime.utcnow()
                 await session.commit()
-                logger.info(f"Updated status for lock {device_id}: locked={status.is_locked}, key_present={status.is_key_present}")
+                logger.info(f"Updated status for lock {device_id}: locked={status.is_locked}, key={status.is_key_present}, door_open={status.is_door_open}")
                 
                 # Broadcast status update to all connected SSE clients
                 await sse_broadcaster.broadcast("status_update", {
@@ -36,6 +38,7 @@ async def handle_status_update(device_id: str, data: dict):
                     "device_id": device_id,
                     "is_locked": lock.is_locked,
                     "is_key_present": lock.is_key_present,
+                    "is_door_open": lock.is_door_open,
                     "is_online": lock.is_online
                 })
             else:

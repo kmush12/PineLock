@@ -28,15 +28,22 @@
 #define RFID_SCK_PIN 8     // D8 = GPIO8
 
 // Lock Control 
-#define LOCK_MOSFET_PIN 2  // D0 = GPIO2 (has pull-down during boot - prevents unlock on reset)
+#define LOCK_MOSFET_PIN 5  // D3 = GPIO5 (correct XIAO ESP32-C3 mapping)
 
 // Buzzer
-#define BUZZER_PIN 21      // D6 = GPIO21
-#define ENABLE_BUZZER 0
+#define BUZZER_PIN 2       // D0 = GPIO2
+#define ENABLE_BUZZER 1
 
 // Vibration Sensor (Waveshare 9536)
 #define VIBRATION_SENSOR_PIN 21 // D6 = GPIO21
-#define ENABLE_VIBRATION_SENSOR 0
+#define ENABLE_VIBRATION_SENSOR 1
+#define VIBRATION_THRESHOLD_COUNT 2 // Number of vibrations required to trigger alarm
+#define VIBRATION_WINDOW_MS 2000    // Time window in ms for the threshold
+
+// Door Sensor (Reed Switch)
+#define DOOR_SENSOR_PIN 20      // D7 = GPIO20
+#define ENABLE_DOOR_SENSOR 1
+#define DOOR_OPEN_ALERT_MS 180000 // 3 minutes in ms
 
 // Keypad Configuration (PCF8574) - MOD-01681 12-key keypad
 #define PCF8574_ADDRESS 0x20

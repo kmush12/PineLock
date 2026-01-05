@@ -26,6 +26,7 @@ class LockResponse(LockBase):
     is_online: bool
     is_locked: bool
     is_key_present: bool
+    is_door_open: bool = False
     last_seen: datetime
     created_at: datetime
 
@@ -125,4 +126,5 @@ class MQTTStatusUpdate(BaseModel):
     device_id: str
     is_locked: bool
     is_key_present: Optional[bool] = None  # RFID key presence status
+    is_door_open: Optional[bool] = None    # Door open/closed status
     timestamp: Optional[datetime] = None
